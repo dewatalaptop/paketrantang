@@ -3,188 +3,280 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Promo Spesial: JipTrip Salatiga & Dolan Sawah</title>
+    <title>Promo Eksklusif: JipTrip Salatiga & Dolan Sawah Adventure</title>
     <style>
         /* Mengimpor font dari Google Fonts */
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Playfair+Display:wght@700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&family=Playfair+Display:wght@700;900&display=swap');
+
+        /* Variabel Warna untuk Kemudahan Kustomisasi */
+        :root {
+            --font-heading: 'Playfair Display', serif;
+            --font-body: 'Montserrat', sans-serif;
+            --color-primary: #8B4513; /* SaddleBrown */
+            --color-secondary: #2E8B57; /* SeaGreen */
+            --color-accent: #FF6600; /* Orange Accent */
+            --color-background: #FDFBF7;
+            --color-surface: #FFFFFF;
+            --color-text: #3D3D3D;
+            --color-text-light: #6c757d;
+            --shadow: 0 10px 35px rgba(0, 0, 0, 0.08);
+            --border-radius: 12px;
+        }
 
         /* Reset dan Pengaturan Dasar Body */
         body {
-            font-family: 'Poppins', sans-serif;
-            background-color: #f4f1ea;
-            color: #333;
+            font-family: var(--font-body);
+            background-color: var(--color-background);
+            color: var(--color-text);
             margin: 0;
-            padding: 30px;
-            line-height: 1.6;
+            padding: 0;
+            line-height: 1.7;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
 
         .container {
-            max-width: 900px;
+            max-width: 1100px;
             margin: auto;
-            background-color: #ffffff;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
+            padding: 0 20px;
+        }
+
+        /* Animasi */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animated {
+            animation: fadeInUp 0.8s ease-out forwards;
         }
 
         /* Header Promo */
         .header {
-            background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('https://images.unsplash.com/photo-1593457148897-42c671b56cec?q=80&w=1932&auto=format&fit=crop') no-repeat center center;
+            background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url('https://images.unsplash.com/photo-1593457148897-42c671b56cec?q=80&w=1932&auto=format&fit=crop') no-repeat center center;
             background-size: cover;
             color: #fff;
-            padding: 50px 30px;
+            padding: 100px 20px;
             text-align: center;
         }
 
         .header h1 {
-            font-family: 'Playfair Display', serif;
-            font-size: 2.8em;
+            font-family: var(--font-heading);
+            font-size: 4em;
             margin: 0;
-            text-shadow: 2px 2px 8px rgba(0,0,0,0.7);
+            font-weight: 900;
+            text-shadow: 3px 3px 10px rgba(0,0,0,0.7);
+            animation: fadeInUp 0.6s ease-out;
         }
 
         .header p {
-            font-size: 1.1em;
-            margin-top: 10px;
-            max-width: 600px;
+            font-size: 1.2em;
+            margin-top: 15px;
+            max-width: 650px;
             margin-left: auto;
             margin-right: auto;
+            font-weight: 400;
+            animation: fadeInUp 0.7s ease-out;
         }
 
         /* Konten Utama */
-        .content {
-            padding: 30px;
+        .content-wrapper {
+            background-color: var(--color-surface);
+            padding: 50px 0;
+        }
+        
+        .intro-text {
+            text-align: center;
+            font-size: 1.15em;
+            max-width: 800px;
+            margin: 0 auto 50px auto;
+            color: var(--color-text-light);
         }
 
         /* Styling untuk setiap paket */
         .package-section {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 25px;
-            margin-top: 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
         }
 
         .package-card {
-            background-color: #faf8f5;
-            border: 1px solid #e0d9cf;
-            border-radius: 10px;
-            padding: 25px;
-            flex: 1;
-            min-width: 250px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            background-color: var(--color-surface);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
             transition: transform 0.3s, box-shadow 0.3s;
+            border-top: 5px solid var(--color-primary);
         }
 
         .package-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            transform: translateY(-10px);
+            box-shadow: 0 20px 45px rgba(0, 0, 0, 0.12);
+        }
+        
+        .card-content {
+            padding: 30px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
         }
 
         .package-card h2 {
-            font-family: 'Playfair Display', serif;
-            color: #8B4513; /* Warna coklat kayu */
+            font-family: var(--font-heading);
+            color: var(--color-primary);
             margin-top: 0;
-            font-size: 1.5em;
-            border-bottom: 2px solid #e0d9cf;
-            padding-bottom: 10px;
+            margin-bottom: 5px;
+            font-size: 1.6em;
         }
         
-        .package-card h3 {
-            font-size: 1em;
-            font-weight: 600;
-            color: #555;
-            margin-bottom: 5px;
+        .package-card .tagline {
+            font-size: 0.9em;
+            font-weight: 700;
+            color: var(--color-text-light);
+            margin-bottom: 15px;
+            display: block;
         }
 
         .package-card p {
             font-size: 0.95em;
+            color: var(--color-text);
             margin-bottom: 20px;
+            flex-grow: 1;
         }
 
-        .package-card ul {
+        .features-list {
             list-style: none;
             padding: 0;
             font-size: 0.9em;
+            margin-top: auto;
         }
 
-        .package-card ul li {
-            padding-left: 25px;
+        .features-list li {
+            padding-left: 35px;
             position: relative;
-            margin-bottom: 8px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
         }
 
-        .package-card ul li::before {
-            content: '✓';
-            color: #2E8B57; /* Warna hijau laut */
-            font-weight: bold;
+        .features-list li::before {
+            content: '';
             position: absolute;
             left: 0;
+            width: 24px;
+            height: 24px;
+            background-repeat: no-repeat;
+            background-size: contain;
+            background-position: center;
         }
+        
+        /* Icons for features */
+        .icon-activity::before { background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%232E8B57" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>');}
+        .icon-includes::before { background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%232E8B57" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>');}
 
-        .price-box {
-            background-color: #8B4513;
-            color: #fff;
-            text-align: center;
-            padding: 15px;
-            border-radius: 8px;
-            margin-top: 20px;
+        .price-footer {
+            background-color: #f9f9f9;
+            padding: 20px 30px;
+            text-align: right;
+            border-top: 1px solid #eee;
         }
-
-        .price-box .promo-price {
-            font-size: 1.8em;
-            font-weight: 700;
+        
+        .price-box .per-person {
+            font-size: 0.9em;
+            color: var(--color-text-light);
             display: block;
+        }
+        
+        .price-box .promo-price {
+            font-size: 2.2em;
+            font-weight: 700;
+            color: var(--color-primary);
+            display: block;
+            line-height: 1;
         }
         
         .price-box .original-price {
             text-decoration: line-through;
-            opacity: 0.8;
-            font-size: 1em;
-        }
-        
-        .price-box .per-person {
-            font-size: 0.8em;
-            display: block;
-            margin-top: -5px;
+            opacity: 0.7;
+            font-size: 1.1em;
+            margin-left: 8px;
         }
 
+        .cta-button {
+            background: var(--color-accent);
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 50px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.2s;
+            display: inline-block;
+            text-decoration: none;
+            margin-top: 20px;
+        }
+        
+        .cta-button:hover {
+            background-color: #e65c00;
+            transform: scale(1.05);
+        }
+        
+        /* Section Separator */
+        .wave-separator {
+            background-color: var(--color-background);
+        }
+        
+        .wave-separator svg {
+            display: block;
+        }
 
         /* Menu Section */
         .menu-section {
-            margin-top: 40px;
-            padding-top: 30px;
-            border-top: 2px dashed #e0d9cf;
+            padding: 80px 0;
             text-align: center;
+            background-color: var(--color-background);
         }
         
         .menu-section h2 {
-            font-family: 'Playfair Display', serif;
-            font-size: 2em;
-            color: #8B4513;
+            font-family: var(--font-heading);
+            font-size: 2.8em;
+            color: var(--color-primary);
+            margin-bottom: 10px;
         }
         
         .menu-container {
             display: flex;
             justify-content: center;
             gap: 30px;
-            margin-top: 20px;
+            margin-top: 40px;
             flex-wrap: wrap;
         }
         
         .menu-card {
-            background: #fff;
+            background: var(--color-surface);
             border: 1px solid #e0d9cf;
-            border-radius: 10px;
-            padding: 20px;
-            width: 300px;
+            border-radius: var(--border-radius);
+            padding: 25px;
+            width: 320px;
             text-align: left;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
         }
         
         .menu-card h3 {
             text-align: center;
-            font-size: 1.3em;
-            color: #2E8B57;
+            font-family: var(--font-heading);
+            font-size: 1.6em;
+            color: var(--color-secondary);
             margin-top: 0;
+            margin-bottom: 20px;
         }
         
         .menu-card ul {
@@ -193,105 +285,181 @@
         }
         
         .menu-card ul li {
-            padding: 8px 0;
-            border-bottom: 1px solid #f0f0f0;
+            padding: 10px 0;
+            border-bottom: 1px solid #f2f2f2;
+            display: flex;
+            justify-content: space-between;
         }
         
         .menu-card ul li:last-child {
             border-bottom: none;
+        }
+        
+        /* Final CTA Section */
+        .final-cta {
+            background: var(--color-primary);
+            color: white;
+            text-align: center;
+            padding: 60px 20px;
+        }
+        
+        .final-cta h2 {
+            font-family: var(--font-heading);
+            font-size: 2.5em;
+            margin-top: 0;
+            margin-bottom: 15px;
+        }
+        
+        .final-cta p {
+            max-width: 600px;
+            margin: 0 auto 30px auto;
+            opacity: 0.9;
+        }
+        
+        /* Mobile Responsiveness */
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2.8em;
+            }
+            .header p {
+                font-size: 1em;
+            }
+            .menu-container {
+                flex-direction: column;
+                align-items: center;
+            }
+            .package-card, .menu-card {
+                width: 100%;
+                max-width: 400px;
+            }
         }
 
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <header class="header">
+    <header class="header">
+        <div class="container">
             <h1>PROMO SPESIAL</h1>
             <p>Petualangan JipTrip Salatiga & Santap Lezat di Dolan Sawah</p>
-        </header>
+        </div>
+    </header>
 
-        <main class="content">
-            <p style="text-align: center; font-size: 1.1em;">Nikmati pengalaman seru tak terlupakan di Salatiga! Paket eksklusif yang memadukan sensasi petualangan JipTrip Salatiga dengan kuliner otentik dari resto Dolan Sawah. Pilih paket sesuai semangat petualangan grup Anda dan dapatkan harga promo spesial!</p>
+    <div class="content-wrapper">
+        <div class="container">
+            <p class="intro-text animated">Nikmati pengalaman seru tak terlupakan di Salatiga! Paket eksklusif yang memadukan sensasi petualangan JipTrip Salatiga dengan kuliner otentik dari resto Dolan Sawah. Pilih paket sesuai semangat petualangan grup Anda dan dapatkan harga promo spesial!</p>
 
             <div class="package-section">
-                <div class="package-card">
-                    <h2>PAKET PETUALANGAN SERU</h2>
-                    <h3>Adrenalin & Kuliner Juara</h3>
-                    <p>Kombinasi sempurna bagi Anda yang ingin memacu adrenalin dalam waktu efisien. Rasakan serunya menaklukkan medan off-road selama 1,5 jam, lalu pulihkan energi dengan santap siang istimewa.</p>
-                    <ul>
-                        <li><strong>Aktivitas:</strong> Fun Offroad Trip (1,5 jam) & Makan Siang</li>
-                        <li><strong>Termasuk:</strong> Jip 4x4 (1 jip/3 org), Driver, Safety Gear, Air Mineral, Asuransi, Paket Makan Siang.</li>
-                    </ul>
-                    <div class="price-box">
-                        <span class="promo-price">Rp 255.000</span>
-                        <span class="per-person">per Orang</span>
-                        <span class="original-price">Rp 270.000</span>
+                <div class="package-card animated" style="animation-delay: 0.2s;">
+                    <div class="card-content">
+                        <h2>PETUALANGAN SERU</h2>
+                        <span class="tagline">Adrenalin & Kuliner Juara</span>
+                        <p>Kombinasi sempurna bagi Anda yang ingin memacu adrenalin dalam waktu efisien. Rasakan serunya menaklukkan medan off-road selama 1,5 jam, lalu pulihkan energi dengan santap siang istimewa.</p>
+                        <ul class="features-list">
+                            <li class="icon-activity"><strong>Aktivitas:</strong> Fun Offroad Trip (1,5 jam) & Makan Siang</li>
+                            <li class="icon-includes"><strong>Termasuk:</strong> Jip 4x4, Driver, Safety Gear, Air Mineral, Asuransi, Makan Siang.</li>
+                        </ul>
+                    </div>
+                    <div class="price-footer">
+                        <div class="price-box">
+                            <span class="per-person">Mulai dari</span>
+                            <span class="promo-price">Rp 255rb</span>
+                            <span class="original-price">Rp 270rb</span>
+                        </div>
+                        <a href="#booking" class="cta-button">Pilih Paket Ini</a>
                     </div>
                 </div>
 
-                <div class="package-card">
-                    <h2>PAKET PETUALANGAN MAKSIMAL</h2>
-                    <h3>Off-road, Tubing & Pesta Rasa</h3>
-                    <p>Untuk para pencari petualangan sejati! Taklukkan trek off-road mendebarkan, lanjutkan dengan keseruan Tubing Sitalang, dan tutup hari dengan pesta rasa hidangan terbaik.</p>
-                    <ul>
-                        <li><strong>Aktivitas:</strong> Fun Offroad Trip & Tubing Sitalang (total 3 jam)</li>
-                        <li><strong>Termasuk:</strong> Jip 4x4 (1 jip/3 org), Driver, Safety & Tubing Gear, Air Mineral, Asuransi, Paket Makan Siang.</li>
-                    </ul>
-                    <div class="price-box">
-                        <span class="promo-price">Rp 320.000</span>
-                        <span class="per-person">per Orang</span>
-                        <span class="original-price">Rp 350.000</span>
+                <div class="package-card animated" style="animation-delay: 0.4s; border-color: var(--color-secondary);">
+                    <div class="card-content">
+                        <h2 style="color: var(--color-secondary);">PETUALANGAN MAKSIMAL</h2>
+                        <span class="tagline">Off-road, Tubing & Pesta Rasa</span>
+                        <p>Untuk para pencari petualangan sejati! Taklukkan trek off-road mendebarkan, lanjutkan dengan keseruan Tubing Sitalang, dan tutup hari dengan pesta rasa hidangan terbaik.</p>
+                         <ul class="features-list">
+                            <li class="icon-activity"><strong>Aktivitas:</strong> Fun Offroad Trip & Tubing Sitalang (total 3 jam)</li>
+                            <li class="icon-includes"><strong>Termasuk:</strong> Jip 4x4, Driver, Safety & Tubing Gear, Air Mineral, Asuransi, Makan Siang.</li>
+                        </ul>
+                    </div>
+                     <div class="price-footer">
+                        <div class="price-box">
+                             <span class="per-person">Mulai dari</span>
+                             <span class="promo-price" style="color: var(--color-secondary);">Rp 320rb</span>
+                             <span class="original-price">Rp 350rb</span>
+                        </div>
+                        <a href="#booking" class="cta-button">Pilih Paket Ini</a>
                     </div>
                 </div>
 
-                <div class="package-card">
-                    <h2>PAKET WISATA SANTAI</h2>
-                    <h3>Pesona Desa & Kelezatan Lokal</h3>
-                    <p>Nikmati keindahan Salatiga dengan ritme rileks. Menyusuri pesona desa, mengunjungi destinasi wisata lokal serta UMKM, ditutup dengan makan siang nikmat di suasana asri.</p>
-                    <ul>
-                        <li><strong>Aktivitas:</strong> Fun Village Tour (2 jam) & Makan Siang</li>
-                        <li><strong>Termasuk:</strong> Jip 4x4 (1 jip/3 org), Driver, Safety Gear, Kunjungan UMKM, Air Mineral, Asuransi, Paket Makan Siang.</li>
-                    </ul>
-                    <div class="price-box">
-                        <span class="promo-price">Rp 255.000</span>
-                        <span class="per-person">per Orang</span>
-                        <span class="original-price">Rp 270.000</span>
+                <div class="package-card animated" style="animation-delay: 0.6s;">
+                    <div class="card-content">
+                        <h2>WISATA SANTAI</h2>
+                        <span class="tagline">Pesona Desa & Kelezatan Lokal</span>
+                        <p>Nikmati keindahan Salatiga dengan ritme rileks. Menyusuri pesona desa, mengunjungi destinasi wisata lokal serta UMKM, ditutup dengan makan siang nikmat di suasana asri.</p>
+                        <ul class="features-list">
+                            <li class="icon-activity"><strong>Aktivitas:</strong> Fun Village Tour (2 jam) & Makan Siang</li>
+                            <li class="icon-includes"><strong>Termasuk:</strong> Jip 4x4, Driver, Safety Gear, Kunjungan UMKM, Air Mineral, Asuransi, Makan Siang.</li>
+                        </ul>
+                    </div>
+                     <div class="price-footer">
+                        <div class="price-box">
+                             <span class="per-person">Mulai dari</span>
+                             <span class="promo-price">Rp 255rb</span>
+                             <span class="original-price">Rp 270rb</span>
+                        </div>
+                        <a href="#booking" class="cta-button">Pilih Paket Ini</a>
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
+    
+    <div class="wave-separator">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320"><path fill="#ffffff" fill-opacity="1" d="M0,160L48,176C96,192,192,224,288,213.3C384,203,480,149,576,149.3C672,149,768,203,864,229.3C960,256,1056,256,1152,234.7C1248,213,1344,171,1392,149.3L1440,128L1440,0L1392,0C1344,0,1248,0,1152,0C1056,0,960,0,864,0C768,0,672,0,576,0C480,0,384,0,288,0C192,0,96,0,48,0L0,0Z"></path></svg>
+    </div>
 
-            <div class="menu-section">
-                <h2>PILIHAN MENU MAKAN SIANG SPESIAL</h2>
-                <p>Setiap paket sudah termasuk satu set menu lengkap (pilih salah satu):</p>
-                <div class="menu-container">
-                    <div class="menu-card">
-                        <h3>Set Menu A</h3>
-                        <ul>
-                            <li>Nasi Putih</li>
-                            <li>Ayam Lada Hitam</li>
-                            <li>Capcay</li>
-                            <li>Soun Jamur</li>
-                            <li>Bakso Kuah</li>
-                            <li>Kerupuk</li>
-                            <li>Bolu Gulung</li>
-                            <li>Teh</li>
-                        </ul>
-                    </div>
-                    <div class="menu-card">
-                        <h3>Set Menu B</h3>
-                        <ul>
-                            <li>Nasi Putih</li>
-                            <li>Kakap Asam Manis</li>
-                            <li>Ayam Goreng Mentega</li>
-                            <li>Tumis Buncis Daging Sapi</li>
-                            <li>Sambal</li>
-                            <li>Teh</li>
-                        </ul>
-                    </div>
+    <section class="menu-section">
+        <div class="container animated">
+            <h2>PILIHAN MENU MAKAN SIANG SPESIAL</h2>
+            <p class="intro-text" style="margin-bottom: 20px;">Setiap paket sudah termasuk satu set menu lengkap (pilih salah satu):</p>
+            <div class="menu-container">
+                <div class="menu-card">
+                    <h3>Set Menu A</h3>
+                    <ul>
+                        <li>Nasi Putih</li>
+                        <li>Ayam Lada Hitam</li>
+                        <li>Capcay</li>
+                        <li>Soun Jamur</li>
+                        <li>Bakso Kuah</li>
+                        <li>Kerupuk</li>
+                        <li>Bolu Gulung</li>
+                        <li>Teh</li>
+                    </ul>
+                </div>
+                <div class="menu-card">
+                    <h3>Set Menu B</h3>
+                    <ul>
+                        <li>Nasi Putih</li>
+                        <li>Kakap Asam Manis</li>
+                        <li>Ayam Goreng Mentega</li>
+                        <li>Tumis Buncis Daging Sapi</li>
+                        <li>Sambal</li>
+                        <li>Kerupuk</li>
+                        <li>Buah Potong</li>
+                        <li>Teh</li>
+                    </ul>
                 </div>
             </div>
-        </main>
+        </div>
+    </section>
+    
+    <div id="booking">
+        <section class="final-cta">
+            <div class="container">
+                <h2>Siap Berpetualang?</h2>
+                <p>Jangan lewatkan kesempatan untuk merasakan petualangan tak terlupakan di Salatiga. Hubungi kami sekarang untuk reservasi dan informasi lebih lanjut!</p>
+                <a href="https://wa.me/628123456789" class="cta-button" style="padding: 15px 40px; font-size: 1.1em;">Pesan via WhatsApp</a>
+            </div>
+        </section>
     </div>
 
 </body>

@@ -3,653 +3,296 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Paket Rantang Dolan Sawah</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Montserrat:wght@700&display=swap" rel="stylesheet">
+    <title>Promo Spesial: JipTrip Salatiga & Dolan Sawah</title>
     <style>
-        :root {
-            --primary-color: #4CAF50;
-            --primary-dark: #388E3C;
-            --secondary-color: #FFC107;
-            --background-color: #f9f9f9;
-            --card-color: #ffffff;
-            --text-color: #333333;
-            --text-light: #666666;
-            --border-color: #e0e0e0;
-            --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            --border-radius: 12px;
-            --spacing: 16px;
-            --spacing-small: 8px;
-            --spacing-large: 24px;
-        }
+        /* Mengimpor font dari Google Fonts */
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Playfair+Display:wght@700&display=swap');
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Poppins', sans-serif;
-        }
-
+        /* Reset dan Pengaturan Dasar Body */
         body {
-            background-color: var(--background-color);
-            color: var(--text-color);
+            font-family: 'Poppins', sans-serif;
+            background-color: #f4f1ea;
+            color: #333;
+            margin: 0;
+            padding: 30px;
             line-height: 1.6;
         }
 
         .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: var(--spacing);
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-
-        header {
-            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
-            color: white;
-            padding: var(--spacing-large) var(--spacing);
-            border-radius: var(--border-radius);
-            margin-bottom: var(--spacing-large);
-            box-shadow: var(--shadow);
-            text-align: center;
-            position: relative;
+            max-width: 900px;
+            margin: auto;
+            background-color: #ffffff;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
             overflow: hidden;
         }
 
-        .header-content {
-            position: relative;
-            z-index: 2;
-        }
-
-        header h1 {
-            font-family: 'Montserrat', sans-serif;
-            font-size: 2.2rem;
-            margin-bottom: var(--spacing-small);
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-        }
-
-        .header-decoration {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 1;
-            display: flex;
-            justify-content: space-between;
-            padding: 0 20px;
-            align-items: center;
-            opacity: 0.1;
-        }
-
-        .decoration-circle {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            background-color: white;
-        }
-
-        main {
-            flex: 1;
-        }
-
-        .main-menu {
-            display: flex;
-            justify-content: center;
-            margin-bottom: var(--spacing-large);
-            gap: var(--spacing);
-        }
-
-        .menu-btn {
-            padding: 12px 24px;
-            border: none;
-            border-radius: 50px;
-            background-color: var(--card-color);
-            color: var(--text-color);
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            box-shadow: var(--shadow);
-        }
-
-        .menu-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
-        }
-
-        .menu-btn.active {
-            background-color: var(--primary-color);
-            color: white;
-        }
-
-        .menu-btn i {
-            font-size: 1.2rem;
-        }
-
-        .content-section {
-            background-color: var(--card-color);
-            border-radius: var(--border-radius);
-            padding: var(--spacing-large);
-            box-shadow: var(--shadow);
-            margin-bottom: var(--spacing-large);
-        }
-
-        .hidden {
-            display: none;
-        }
-
-        .form-container {
-            max-width: 600px;
-            margin: 0 auto;
-        }
-
-        .form-container h2, .orders-container h2 {
-            color: var(--primary-dark);
-            margin-bottom: var(--spacing-large);
-            display: flex;
-            align-items: center;
-            gap: var(--spacing-small);
-        }
-
-        .form-group {
-            margin-bottom: var(--spacing);
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: var(--spacing-small);
-            font-weight: 500;
-            color: var(--text-color);
-            display: flex;
-            align-items: center;
-            gap: var(--spacing-small);
-        }
-
-        .form-group input {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid var(--border-color);
-            border-radius: var(--border-radius);
-            font-size: 1rem;
-            transition: border 0.3s ease;
-        }
-
-        .form-group input:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
-        }
-
-        .submit-btn {
-            background-color: var(--primary-color);
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 50px;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 1rem;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-top: var(--spacing);
-        }
-
-        .submit-btn:hover {
-            background-color: var(--primary-dark);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
-        }
-
-        .orders-list {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: var(--spacing);
-        }
-
-        .order-card {
-            background-color: var(--card-color);
-            border-radius: var(--border-radius);
-            padding: var(--spacing);
-            box-shadow: var(--shadow);
-            border-left: 4px solid var(--primary-color);
-            transition: all 0.3s ease;
-            position: relative;
-        }
-
-        .order-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-        }
-
-        .order-card.completed {
-            border-left-color: var(--secondary-color);
-            opacity: 0.8;
-        }
-
-        .order-card.completed::after {
-            content: "Selesai";
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background-color: var(--secondary-color);
-            color: var(--text-color);
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 0.8rem;
-            font-weight: 600;
-        }
-
-        .order-card h3 {
-            color: var(--primary-dark);
-            margin-bottom: var(--spacing-small);
-            display: flex;
-            align-items: center;
-            gap: var(--spacing-small);
-        }
-
-        .order-card p {
-            color: var(--text-light);
-            margin-bottom: var(--spacing);
-            display: flex;
-            align-items: center;
-            gap: var(--spacing-small);
-        }
-
-        .order-actions {
-            display: flex;
-            gap: var(--spacing-small);
-        }
-
-        .whatsapp-btn {
-            background-color: #25D366;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: 500;
-            font-size: 0.9rem;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            flex: 1;
-            justify-content: center;
-        }
-
-        .whatsapp-btn:hover {
-            background-color: #128C7E;
-            transform: translateY(-2px);
-        }
-
-        .delete-btn {
-            background-color: #f44336;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: 500;
-            font-size: 0.9rem;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .delete-btn:hover {
-            background-color: #d32f2f;
-            transform: translateY(-2px);
-        }
-
-        .clear-all-btn {
-            background-color: #f44336;
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 50px;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 1rem;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-top: var(--spacing-large);
-            width: 100%;
-            justify-content: center;
-        }
-
-        .clear-all-btn:hover {
-            background-color: #d32f2f;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
-        }
-
-        footer {
+        /* Header Promo */
+        .header {
+            background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('https://images.unsplash.com/photo-1593457148897-42c671b56cec?q=80&w=1932&auto=format&fit=crop') no-repeat center center;
+            background-size: cover;
+            color: #fff;
+            padding: 50px 30px;
             text-align: center;
-            padding: var(--spacing);
-            color: var(--text-light);
-            font-size: 0.9rem;
         }
 
-        /* Responsive Design */
-        @media (max-width: 768px) {
-            header h1 {
-                font-size: 1.8rem;
-            }
-            
-            .main-menu {
-                flex-direction: column;
-            }
-            
-            .menu-btn {
-                width: 100%;
-                justify-content: center;
-            }
-            
-            .content-section {
-                padding: var(--spacing);
-            }
-            
-            .orders-list {
-                grid-template-columns: 1fr;
-            }
+        .header h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.8em;
+            margin: 0;
+            text-shadow: 2px 2px 8px rgba(0,0,0,0.7);
         }
 
-        @media (max-width: 480px) {
-            header h1 {
-                font-size: 1.5rem;
-            }
-            
-            .form-container h2, .orders-container h2 {
-                font-size: 1.2rem;
-            }
-            
-            .order-card h3 {
-                font-size: 1rem;
-            }
-            
-            .order-actions {
-                flex-direction: column;
-            }
-            
-            .whatsapp-btn, .delete-btn {
-                width: 100%;
-            }
+        .header p {
+            font-size: 1.1em;
+            margin-top: 10px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
         }
+
+        /* Konten Utama */
+        .content {
+            padding: 30px;
+        }
+
+        /* Styling untuk setiap paket */
+        .package-section {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 25px;
+            margin-top: 20px;
+        }
+
+        .package-card {
+            background-color: #faf8f5;
+            border: 1px solid #e0d9cf;
+            border-radius: 10px;
+            padding: 25px;
+            flex: 1;
+            min-width: 250px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .package-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .package-card h2 {
+            font-family: 'Playfair Display', serif;
+            color: #8B4513; /* Warna coklat kayu */
+            margin-top: 0;
+            font-size: 1.5em;
+            border-bottom: 2px solid #e0d9cf;
+            padding-bottom: 10px;
+        }
+        
+        .package-card h3 {
+            font-size: 1em;
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 5px;
+        }
+
+        .package-card p {
+            font-size: 0.95em;
+            margin-bottom: 20px;
+        }
+
+        .package-card ul {
+            list-style: none;
+            padding: 0;
+            font-size: 0.9em;
+        }
+
+        .package-card ul li {
+            padding-left: 25px;
+            position: relative;
+            margin-bottom: 8px;
+        }
+
+        .package-card ul li::before {
+            content: '✓';
+            color: #2E8B57; /* Warna hijau laut */
+            font-weight: bold;
+            position: absolute;
+            left: 0;
+        }
+
+        .price-box {
+            background-color: #8B4513;
+            color: #fff;
+            text-align: center;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .price-box .promo-price {
+            font-size: 1.8em;
+            font-weight: 700;
+            display: block;
+        }
+        
+        .price-box .original-price {
+            text-decoration: line-through;
+            opacity: 0.8;
+            font-size: 1em;
+        }
+        
+        .price-box .per-person {
+            font-size: 0.8em;
+            display: block;
+            margin-top: -5px;
+        }
+
+
+        /* Menu Section */
+        .menu-section {
+            margin-top: 40px;
+            padding-top: 30px;
+            border-top: 2px dashed #e0d9cf;
+            text-align: center;
+        }
+        
+        .menu-section h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 2em;
+            color: #8B4513;
+        }
+        
+        .menu-container {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .menu-card {
+            background: #fff;
+            border: 1px solid #e0d9cf;
+            border-radius: 10px;
+            padding: 20px;
+            width: 300px;
+            text-align: left;
+        }
+        
+        .menu-card h3 {
+            text-align: center;
+            font-size: 1.3em;
+            color: #2E8B57;
+            margin-top: 0;
+        }
+        
+        .menu-card ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        
+        .menu-card ul li {
+            padding: 8px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .menu-card ul li:last-child {
+            border-bottom: none;
+        }
+
     </style>
 </head>
 <body>
+
     <div class="container">
-        <header>
-            <div class="header-content">
-                <h1>Paket Rantang Dolan Sawah</h1>
-                <div class="header-decoration">
-                    <div class="decoration-circle"></div>
-                    <div class="decoration-circle"></div>
-                    <div class="decoration-circle"></div>
-                </div>
-            </div>
+        <header class="header">
+            <h1>PROMO SPESIAL</h1>
+            <p>Petualangan JipTrip Salatiga & Santap Lezat di Dolan Sawah</p>
         </header>
 
-        <main>
-            <div class="main-menu">
-                <button id="inputOrderBtn" class="menu-btn active">
-                    <i class="fas fa-plus-circle"></i> Input Pesanan Baru
-                </button>
-                <button id="checkOrderBtn" class="menu-btn">
-                    <i class="fas fa-list"></i> Cek Daftar Pesanan
-                </button>
-            </div>
+        <main class="content">
+            <p style="text-align: center; font-size: 1.1em;">Nikmati pengalaman seru tak terlupakan di Salatiga! Paket eksklusif yang memadukan sensasi petualangan JipTrip Salatiga dengan kuliner otentik dari resto Dolan Sawah. Pilih paket sesuai semangat petualangan grup Anda dan dapatkan harga promo spesial!</p>
 
-            <div id="inputOrderSection" class="content-section">
-                <div class="form-container">
-                    <h2><i class="fas fa-edit"></i> Form Pesanan Baru</h2>
-                    <form id="orderForm">
-                        <div class="form-group">
-                            <label for="customerName"><i class="fas fa-user"></i> Nama Pemesan:</label>
-                            <input type="text" id="customerName" required placeholder="Masukkan nama pemesan">
-                        </div>
-                        <div class="form-group">
-                            <label for="phoneNumber"><i class="fas fa-phone"></i> Nomor WhatsApp:</label>
-                            <input type="tel" id="phoneNumber" required placeholder="Masukkan nomor WhatsApp">
-                        </div>
-                        <button type="submit" class="submit-btn">
-                            <i class="fas fa-save"></i> Simpan Pesanan
-                        </button>
-                    </form>
+            <div class="package-section">
+                <div class="package-card">
+                    <h2>PAKET PETUALANGAN SERU</h2>
+                    <h3>Adrenalin & Kuliner Juara</h3>
+                    <p>Kombinasi sempurna bagi Anda yang ingin memacu adrenalin dalam waktu efisien. Rasakan serunya menaklukkan medan off-road selama 1,5 jam, lalu pulihkan energi dengan santap siang istimewa.</p>
+                    <ul>
+                        <li><strong>Aktivitas:</strong> Fun Offroad Trip (1,5 jam) & Makan Siang</li>
+                        <li><strong>Termasuk:</strong> Jip 4x4 (1 jip/3 org), Driver, Safety Gear, Air Mineral, Asuransi, Paket Makan Siang.</li>
+                    </ul>
+                    <div class="price-box">
+                        <span class="promo-price">Rp 255.000</span>
+                        <span class="per-person">per Orang</span>
+                        <span class="original-price">Rp 270.000</span>
+                    </div>
+                </div>
+
+                <div class="package-card">
+                    <h2>PAKET PETUALANGAN MAKSIMAL</h2>
+                    <h3>Off-road, Tubing & Pesta Rasa</h3>
+                    <p>Untuk para pencari petualangan sejati! Taklukkan trek off-road mendebarkan, lanjutkan dengan keseruan Tubing Sitalang, dan tutup hari dengan pesta rasa hidangan terbaik.</p>
+                    <ul>
+                        <li><strong>Aktivitas:</strong> Fun Offroad Trip & Tubing Sitalang (total 3 jam)</li>
+                        <li><strong>Termasuk:</strong> Jip 4x4 (1 jip/3 org), Driver, Safety & Tubing Gear, Air Mineral, Asuransi, Paket Makan Siang.</li>
+                    </ul>
+                    <div class="price-box">
+                        <span class="promo-price">Rp 320.000</span>
+                        <span class="per-person">per Orang</span>
+                        <span class="original-price">Rp 350.000</span>
+                    </div>
+                </div>
+
+                <div class="package-card">
+                    <h2>PAKET WISATA SANTAI</h2>
+                    <h3>Pesona Desa & Kelezatan Lokal</h3>
+                    <p>Nikmati keindahan Salatiga dengan ritme rileks. Menyusuri pesona desa, mengunjungi destinasi wisata lokal serta UMKM, ditutup dengan makan siang nikmat di suasana asri.</p>
+                    <ul>
+                        <li><strong>Aktivitas:</strong> Fun Village Tour (2 jam) & Makan Siang</li>
+                        <li><strong>Termasuk:</strong> Jip 4x4 (1 jip/3 org), Driver, Safety Gear, Kunjungan UMKM, Air Mineral, Asuransi, Paket Makan Siang.</li>
+                    </ul>
+                    <div class="price-box">
+                        <span class="promo-price">Rp 255.000</span>
+                        <span class="per-person">per Orang</span>
+                        <span class="original-price">Rp 270.000</span>
+                    </div>
                 </div>
             </div>
 
-            <div id="checkOrderSection" class="content-section hidden">
-                <div class="orders-container">
-                    <h2><i class="fas fa-clipboard-list"></i> Daftar Pesanan</h2>
-                    <div id="ordersList" class="orders-list">
-                        <!-- Daftar pesanan akan dimuat di sini -->
+            <div class="menu-section">
+                <h2>PILIHAN MENU MAKAN SIANG SPESIAL</h2>
+                <p>Setiap paket sudah termasuk satu set menu lengkap (pilih salah satu):</p>
+                <div class="menu-container">
+                    <div class="menu-card">
+                        <h3>Set Menu A</h3>
+                        <ul>
+                            <li>Nasi Putih</li>
+                            <li>Ayam Lada Hitam</li>
+                            <li>Capcay</li>
+                            <li>Soun Jamur</li>
+                            <li>Bakso Kuah</li>
+                            <li>Kerupuk</li>
+                            <li>Bolu Gulung</li>
+                            <li>Teh</li>
+                        </ul>
                     </div>
-                    <button id="clearAllBtn" class="clear-all-btn">
-                        <i class="fas fa-trash-alt"></i> Hapus Semua Data
-                    </button>
+                    <div class="menu-card">
+                        <h3>Set Menu B</h3>
+                        <ul>
+                            <li>Nasi Putih</li>
+                            <li>Kakap Asam Manis</li>
+                            <li>Ayam Goreng Mentega</li>
+                            <li>Tumis Buncis Daging Sapi</li>
+                            <li>Sambal</li>
+                            <li>Teh</li>
+                        </ul>
+                    </div>
                 </div>
             </div>
         </main>
-
-        <footer>
-            <p>© 2025 Portofino Solution</p>
-        </footer>
     </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // DOM Elements
-            const inputOrderBtn = document.getElementById('inputOrderBtn');
-            const checkOrderBtn = document.getElementById('checkOrderBtn');
-            const inputOrderSection = document.getElementById('inputOrderSection');
-            const checkOrderSection = document.getElementById('checkOrderSection');
-            const orderForm = document.getElementById('orderForm');
-            const customerNameInput = document.getElementById('customerName');
-            const phoneNumberInput = document.getElementById('phoneNumber');
-            const ordersList = document.getElementById('ordersList');
-            const clearAllBtn = document.getElementById('clearAllBtn');
-
-            // Initialize the app
-            initApp();
-
-            // Event Listeners
-            inputOrderBtn.addEventListener('click', showInputOrderSection);
-            checkOrderBtn.addEventListener('click', showCheckOrderSection);
-            orderForm.addEventListener('submit', handleFormSubmit);
-            clearAllBtn.addEventListener('click', clearAllOrders);
-
-            // Functions
-            function initApp() {
-                showInputOrderSection();
-                loadOrders();
-            }
-
-            function showInputOrderSection() {
-                inputOrderSection.classList.remove('hidden');
-                checkOrderSection.classList.add('hidden');
-                inputOrderBtn.classList.add('active');
-                checkOrderBtn.classList.remove('active');
-            }
-
-            function showCheckOrderSection() {
-                inputOrderSection.classList.add('hidden');
-                checkOrderSection.classList.remove('hidden');
-                inputOrderBtn.classList.remove('active');
-                checkOrderBtn.classList.add('active');
-                loadOrders();
-            }
-
-            function handleFormSubmit(e) {
-                e.preventDefault();
-                
-                const customerName = customerNameInput.value.trim();
-                const phoneNumber = phoneNumberInput.value.trim();
-                
-                if (!customerName || !phoneNumber) {
-                    alert('Harap isi semua field!');
-                    return;
-                }
-                
-                // Format nomor telepon untuk WhatsApp
-                const formattedPhone = formatPhoneNumber(phoneNumber);
-                
-                // Buat objek pesanan
-                const order = {
-                    id: Date.now(),
-                    name: customerName,
-                    phone: formattedPhone,
-                    completed: false,
-                    date: new Date().toLocaleString()
-                };
-                
-                // Simpan ke localStorage
-                saveOrder(order);
-                
-                // Reset form
-                orderForm.reset();
-                
-                // Tampilkan notifikasi
-                alert('Pesanan berhasil disimpan!');
-                
-                // Tampilkan daftar pesanan
-                showCheckOrderSection();
-            }
-
-            function formatPhoneNumber(phone) {
-                // Hapus semua karakter non-digit
-                let cleaned = phone.replace(/\D/g, '');
-                
-                // Jika diawali dengan 0, ganti dengan 62
-                if (cleaned.startsWith('0')) {
-                    cleaned = '62' + cleaned.substring(1);
-                }
-                
-                return cleaned;
-            }
-
-            function saveOrder(order) {
-                let orders = getOrders();
-                orders.push(order);
-                localStorage.setItem('rantangOrders', JSON.stringify(orders));
-            }
-
-            function getOrders() {
-                const orders = localStorage.getItem('rantangOrders');
-                return orders ? JSON.parse(orders) : [];
-            }
-
-            function loadOrders() {
-                const orders = getOrders();
-                
-                if (orders.length === 0) {
-                    ordersList.innerHTML = '<p class="no-orders">Tidak ada pesanan yang tersimpan.</p>';
-                    return;
-                }
-                
-                ordersList.innerHTML = '';
-                
-                // Urutkan pesanan berdasarkan yang belum selesai dulu
-                orders.sort((a, b) => (a.completed === b.completed) ? 0 : a.completed ? 1 : -1);
-                
-                orders.forEach(order => {
-                    const orderCard = document.createElement('div');
-                    orderCard.className = `order-card ${order.completed ? 'completed' : ''}`;
-                    orderCard.dataset.id = order.id;
-                    
-                    orderCard.innerHTML = `
-                        <h3><i class="fas fa-user"></i> ${order.name}</h3>
-                        <p><i class="fas fa-phone"></i> ${formatDisplayPhone(order.phone)}</p>
-                        <p><i class="fas fa-calendar-alt"></i> ${order.date}</p>
-                        <div class="order-actions">
-                            <button class="whatsapp-btn" data-phone="${order.phone}">
-                                <i class="fab fa-whatsapp"></i> Hubungi via WhatsApp
-                            </button>
-                            <button class="delete-btn" data-id="${order.id}">
-                                <i class="fas fa-trash-alt"></i> Hapus
-                            </button>
-                        </div>
-                    `;
-                    
-                    ordersList.appendChild(orderCard);
-                });
-                
-                // Tambahkan event listener untuk tombol WhatsApp dan hapus
-                document.querySelectorAll('.whatsapp-btn').forEach(btn => {
-                    btn.addEventListener('click', sendWhatsAppMessage);
-                });
-                
-                document.querySelectorAll('.delete-btn').forEach(btn => {
-                    btn.addEventListener('click', deleteOrder);
-                });
-            }
-
-            function formatDisplayPhone(phone) {
-                // Format untuk tampilan: 62812-3456-7890
-                if (phone.startsWith('62')) {
-                    return phone.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3');
-                }
-                return phone;
-            }
-
-            function sendWhatsAppMessage(e) {
-                const phone = e.target.closest('.whatsapp-btn').dataset.phone;
-                const message = encodeURIComponent("Pesanan paket rantang sudah siap, silahkan mengambil pesanan Anda di counter kasir");
-                const whatsappUrl = `https://wa.me/${phone}?text=${message}`;
-                
-                // Tandai pesanan sebagai selesai
-                const orderCard = e.target.closest('.order-card');
-                const orderId = parseInt(orderCard.dataset.id);
-                markOrderAsCompleted(orderId);
-                
-                // Buka WhatsApp di tab baru
-                window.open(whatsappUrl, '_blank');
-            }
-
-            function markOrderAsCompleted(orderId) {
-                let orders = getOrders();
-                orders = orders.map(order => {
-                    if (order.id === orderId) {
-                        return { ...order, completed: true };
-                    }
-                    return order;
-                });
-                
-                localStorage.setItem('rantangOrders', JSON.stringify(orders));
-                loadOrders();
-            }
-
-            function deleteOrder(e) {
-                if (!confirm('Apakah Anda yakin ingin menghapus pesanan ini?')) {
-                    return;
-                }
-                
-                const orderId = parseInt(e.target.closest('.delete-btn').dataset.id);
-                let orders = getOrders();
-                orders = orders.filter(order => order.id !== orderId);
-                
-                localStorage.setItem('rantangOrders', JSON.stringify(orders));
-                loadOrders();
-            }
-
-            function clearAllOrders() {
-                if (!confirm('Apakah Anda yakin ingin menghapus SEMUA pesanan? Tindakan ini tidak dapat dibatalkan.')) {
-                    return;
-                }
-                
-                localStorage.removeItem('rantangOrders');
-                loadOrders();
-            }
-        });
-    </script>
 </body>
 </html>

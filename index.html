@@ -3,464 +3,218 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Promo Eksklusif: JipTrip Salatiga & Dolan Sawah Adventure</title>
+    <title>Penghitung Klaim Voucher (Firebase Sync)</title>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
     <style>
-        /* Mengimpor font dari Google Fonts */
-        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&family=Playfair+Display:wght@700;900&display=swap');
-
-        /* Variabel Warna untuk Kemudahan Kustomisasi */
+        /* CSS tidak berubah, sama seperti versi sebelumnya */
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
         :root {
-            --font-heading: 'Playfair Display', serif;
-            --font-body: 'Montserrat', sans-serif;
-            --color-primary: #8B4513; /* SaddleBrown */
-            --color-secondary: #2E8B57; /* SeaGreen */
-            --color-accent: #FF6600; /* Orange Accent */
-            --color-background: #FDFBF7;
-            --color-surface: #FFFFFF;
-            --color-text: #3D3D3D;
-            --color-text-light: #6c757d;
-            --shadow: 0 10px 35px rgba(0, 0, 0, 0.08);
-            --border-radius: 12px;
+            --primary-green: #2ecc71; --dark-green: #27ae60; --primary-orange: #e67e22;
+            --dark-orange: #d35400; --light-bg: #f7f9f9; --dark-text: #34495e;
+            --light-text: #ffffff; --border-color: #ecf0f1; --shadow-color: rgba(0, 0, 0, 0.1);
         }
-
-        /* Reset dan Pengaturan Dasar Body */
         body {
-            font-family: var(--font-body);
-            background-color: var(--color-background);
-            color: var(--color-text);
-            margin: 0;
-            padding: 0;
-            line-height: 1.7;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
+            font-family: 'Poppins', sans-serif; background-color: var(--light-bg); color: var(--dark-text);
+            display: flex; justify-content: center; align-items: center; min-height: 100vh;
+            margin: 0; padding: 20px; box-sizing: border-box;
         }
-
-        .container {
-            max-width: 1100px;
-            margin: auto;
-            padding: 0 20px;
+        .app-container {
+            background-color: var(--light-text); padding: 40px; border-radius: 15px;
+            box-shadow: 0 10px 30px var(--shadow-color); width: 100%; max-width: 500px;
+            text-align: center; border-top: 5px solid var(--primary-green);
         }
-
-        /* Animasi */
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        header h1 { color: var(--dark-text); margin-top: 0; margin-bottom: 10px; font-weight: 700; }
+        header p { color: #7f8c8d; margin-bottom: 30px; font-size: 1rem; }
+        .counter-display {
+            background: linear-gradient(135deg, var(--primary-green), var(--dark-green));
+            color: var(--light-text); padding: 20px; border-radius: 10px; margin-bottom: 30px;
         }
-
-        .animated {
-            animation: fadeInUp 0.8s ease-out forwards;
+        .counter-display h2 { margin: 0 0 10px 0; font-size: 1.2rem; font-weight: 400; opacity: 0.9; }
+        .counter-display #count { font-size: 4rem; font-weight: 700; line-height: 1; }
+        .input-form { display: flex; gap: 10px; margin-bottom: 30px; }
+        .input-form input {
+            flex-grow: 1; padding: 15px; border: 2px solid var(--border-color); border-radius: 8px;
+            font-size: 1rem; transition: border-color 0.3s;
         }
-
-        /* Header Promo */
-        .header {
-            background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url('https://images.unsplash.com/photo-1593457148897-42c671b56cec?q=80&w=1932&auto=format&fit=crop') no-repeat center center;
-            background-size: cover;
-            color: #fff;
-            padding: 100px 20px;
-            text-align: center;
+        .input-form input:focus { outline: none; border-color: var(--primary-orange); }
+        .input-form button {
+            background-color: var(--primary-orange); color: var(--light-text); border: none;
+            padding: 15px 25px; border-radius: 8px; font-size: 1rem; font-weight: 600;
+            cursor: pointer; transition: background-color 0.3s, transform 0.2s;
         }
-
-        .header h1 {
-            font-family: var(--font-heading);
-            font-size: 4em;
-            margin: 0;
-            font-weight: 900;
-            text-shadow: 3px 3px 10px rgba(0,0,0,0.7);
-            animation: fadeInUp 0.6s ease-out;
+        .input-form button:hover { background-color: var(--dark-orange); transform: translateY(-2px); }
+        .username-section { text-align: left; }
+        .username-section h3 { border-bottom: 2px solid var(--border-color); padding-bottom: 10px; margin-bottom: 15px; }
+        #username-list { list-style: none; padding: 0; margin: 0; max-height: 200px; overflow-y: auto; }
+        #username-list li {
+            background-color: var(--light-bg); padding: 12px 15px; border-radius: 6px;
+            margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;
         }
-
-        .header p {
-            font-size: 1.2em;
-            margin-top: 15px;
-            max-width: 650px;
-            margin-left: auto;
-            margin-right: auto;
-            font-weight: 400;
-            animation: fadeInUp 0.7s ease-out;
+        .reset-button {
+            margin-top: 30px; background: none; border: 2px solid #e74c3c; color: #e74c3c;
+            padding: 10px 20px; border-radius: 8px; cursor: pointer; transition: background-color 0.3s, color 0.3s;
         }
-
-        /* Konten Utama */
-        .content-wrapper {
-            background-color: var(--color-surface);
-            padding: 50px 0;
-        }
-        
-        .intro-text {
-            text-align: center;
-            font-size: 1.15em;
-            max-width: 800px;
-            margin: 0 auto 50px auto;
-            color: var(--color-text-light);
-        }
-
-        /* Styling untuk setiap paket */
-        .package-section {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 30px;
-        }
-
-        .package-card {
-            background-color: var(--color-surface);
-            border-radius: var(--border-radius);
-            box-shadow: var(--shadow);
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            transition: transform 0.3s, box-shadow 0.3s;
-            border-top: 5px solid var(--color-primary);
-        }
-
-        .package-card:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 20px 45px rgba(0, 0, 0, 0.12);
-        }
-        
-        .card-content {
-            padding: 30px;
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .package-card h2 {
-            font-family: var(--font-heading);
-            color: var(--color-primary);
-            margin-top: 0;
-            margin-bottom: 5px;
-            font-size: 1.6em;
-        }
-        
-        .package-card .tagline {
-            font-size: 0.9em;
-            font-weight: 700;
-            color: var(--color-text-light);
-            margin-bottom: 15px;
-            display: block;
-        }
-
-        .package-card p {
-            font-size: 0.95em;
-            color: var(--color-text);
-            margin-bottom: 20px;
-            flex-grow: 1;
-        }
-
-        .features-list {
-            list-style: none;
-            padding: 0;
-            font-size: 0.9em;
-            margin-top: auto;
-        }
-
-        .features-list li {
-            padding-left: 35px;
-            position: relative;
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-        }
-
-        .features-list li::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            width: 24px;
-            height: 24px;
-            background-repeat: no-repeat;
-            background-size: contain;
-            background-position: center;
-        }
-        
-        /* Icons for features */
-        .icon-activity::before { background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%232E8B57" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>');}
-        .icon-includes::before { background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%232E8B57" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>');}
-
-        .price-footer {
-            background-color: #f9f9f9;
-            padding: 20px 30px;
-            text-align: right;
-            border-top: 1px solid #eee;
-        }
-        
-        .price-box .per-person {
-            font-size: 0.9em;
-            color: var(--color-text-light);
-            display: block;
-        }
-        
-        .price-box .promo-price {
-            font-size: 2.2em;
-            font-weight: 700;
-            color: var(--color-primary);
-            display: block;
-            line-height: 1;
-        }
-        
-        .price-box .original-price {
-            text-decoration: line-through;
-            opacity: 0.7;
-            font-size: 1.1em;
-            margin-left: 8px;
-        }
-
-        .cta-button {
-            background: var(--color-accent);
-            color: white;
-            padding: 12px 25px;
-            border: none;
-            border-radius: 50px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: background-color 0.3s, transform 0.2s;
-            display: inline-block;
-            text-decoration: none;
-            margin-top: 20px;
-        }
-        
-        .cta-button:hover {
-            background-color: #e65c00;
-            transform: scale(1.05);
-        }
-        
-        /* Section Separator */
-        .wave-separator {
-            background-color: var(--color-background);
-        }
-        
-        .wave-separator svg {
-            display: block;
-        }
-
-        /* Menu Section */
-        .menu-section {
-            padding: 80px 0;
-            text-align: center;
-            background-color: var(--color-background);
-        }
-        
-        .menu-section h2 {
-            font-family: var(--font-heading);
-            font-size: 2.8em;
-            color: var(--color-primary);
-            margin-bottom: 10px;
-        }
-        
-        .menu-container {
-            display: flex;
-            justify-content: center;
-            gap: 30px;
-            margin-top: 40px;
-            flex-wrap: wrap;
-        }
-        
-        .menu-card {
-            background: var(--color-surface);
-            border: 1px solid #e0d9cf;
-            border-radius: var(--border-radius);
-            padding: 25px;
-            width: 320px;
-            text-align: left;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-        }
-        
-        .menu-card h3 {
-            text-align: center;
-            font-family: var(--font-heading);
-            font-size: 1.6em;
-            color: var(--color-secondary);
-            margin-top: 0;
-            margin-bottom: 20px;
-        }
-        
-        .menu-card ul {
-            list-style-type: none;
-            padding: 0;
-        }
-        
-        .menu-card ul li {
-            padding: 10px 0;
-            border-bottom: 1px solid #f2f2f2;
-            display: flex;
-            justify-content: space-between;
-        }
-        
-        .menu-card ul li:last-child {
-            border-bottom: none;
-        }
-        
-        /* Final CTA Section */
-        .final-cta {
-            background: var(--color-primary);
-            color: white;
-            text-align: center;
-            padding: 60px 20px;
-        }
-        
-        .final-cta h2 {
-            font-family: var(--font-heading);
-            font-size: 2.5em;
-            margin-top: 0;
-            margin-bottom: 15px;
-        }
-        
-        .final-cta p {
-            max-width: 600px;
-            margin: 0 auto 30px auto;
-            opacity: 0.9;
-        }
-        
-        /* Mobile Responsiveness */
-        @media (max-width: 768px) {
-            .header h1 {
-                font-size: 2.8em;
-            }
-            .header p {
-                font-size: 1em;
-            }
-            .menu-container {
-                flex-direction: column;
-                align-items: center;
-            }
-            .package-card, .menu-card {
-                width: 100%;
-                max-width: 400px;
-            }
-        }
-
+        .reset-button:hover { background-color: #e74c3c; color: var(--light-text); }
     </style>
 </head>
 <body>
+    <div class="app-container">
+        <header>
+            <h1>Klaim Voucher Instagram</h1>
+            <p id="date-display">Menghubungkan ke server...</p>
+        </header>
 
-    <header class="header">
-        <div class="container">
-            <h1>PROMO SPESIAL</h1>
-            <p>Petualangan JipTrip Salatiga & Santap Lezat di Dolan Sawah</p>
-        </div>
-    </header>
-
-    <div class="content-wrapper">
-        <div class="container">
-            <p class="intro-text animated">Nikmati pengalaman seru tak terlupakan di Salatiga! Paket eksklusif yang memadukan sensasi petualangan JipTrip Salatiga dengan kuliner otentik dari resto Dolan Sawah. Pilih paket sesuai semangat petualangan grup Anda dan dapatkan harga promo spesial!</p>
-
-            <div class="package-section">
-                <div class="package-card animated" style="animation-delay: 0.2s;">
-                    <div class="card-content">
-                        <h2>PETUALANGAN SERU</h2>
-                        <span class="tagline">Adrenalin & Kuliner Juara</span>
-                        <p>Kombinasi sempurna bagi Anda yang ingin memacu adrenalin dalam waktu efisien. Rasakan serunya menaklukkan medan off-road selama 1,5 jam, lalu pulihkan energi dengan santap siang istimewa.</p>
-                        <ul class="features-list">
-                            <li class="icon-activity"><strong>Aktivitas:</strong> Fun Offroad Trip (1,5 jam) & Makan Siang</li>
-                            <li class="icon-includes"><strong>Termasuk:</strong> Jip 4x4, Driver, Safety Gear, Air Mineral, Asuransi, Makan Siang.</li>
-                        </ul>
-                    </div>
-                    <div class="price-footer">
-                        <div class="price-box">
-                            <span class="per-person">Mulai dari</span>
-                            <span class="promo-price">Rp 255rb</span>
-                            <span class="original-price">Rp 270rb</span>
-                        </div>
-                        <a href="#booking" class="cta-button">Pilih Paket Ini</a>
-                    </div>
-                </div>
-
-                <div class="package-card animated" style="animation-delay: 0.4s; border-color: var(--color-secondary);">
-                    <div class="card-content">
-                        <h2 style="color: var(--color-secondary);">PETUALANGAN MAKSIMAL</h2>
-                        <span class="tagline">Off-road, Tubing & Pesta Rasa</span>
-                        <p>Untuk para pencari petualangan sejati! Taklukkan trek off-road mendebarkan, lanjutkan dengan keseruan Tubing Sitalang, dan tutup hari dengan pesta rasa hidangan terbaik.</p>
-                         <ul class="features-list">
-                            <li class="icon-activity"><strong>Aktivitas:</strong> Fun Offroad Trip & Tubing Sitalang (total 3 jam)</li>
-                            <li class="icon-includes"><strong>Termasuk:</strong> Jip 4x4, Driver, Safety & Tubing Gear, Air Mineral, Asuransi, Makan Siang.</li>
-                        </ul>
-                    </div>
-                     <div class="price-footer">
-                        <div class="price-box">
-                             <span class="per-person">Mulai dari</span>
-                             <span class="promo-price" style="color: var(--color-secondary);">Rp 320rb</span>
-                             <span class="original-price">Rp 350rb</span>
-                        </div>
-                        <a href="#booking" class="cta-button">Pilih Paket Ini</a>
-                    </div>
-                </div>
-
-                <div class="package-card animated" style="animation-delay: 0.6s;">
-                    <div class="card-content">
-                        <h2>WISATA SANTAI</h2>
-                        <span class="tagline">Pesona Desa & Kelezatan Lokal</span>
-                        <p>Nikmati keindahan Salatiga dengan ritme rileks. Menyusuri pesona desa, mengunjungi destinasi wisata lokal serta UMKM, ditutup dengan makan siang nikmat di suasana asri.</p>
-                        <ul class="features-list">
-                            <li class="icon-activity"><strong>Aktivitas:</strong> Fun Village Tour (2 jam) & Makan Siang</li>
-                            <li class="icon-includes"><strong>Termasuk:</strong> Jip 4x4, Driver, Safety Gear, Kunjungan UMKM, Air Mineral, Asuransi, Makan Siang.</li>
-                        </ul>
-                    </div>
-                     <div class="price-footer">
-                        <div class="price-box">
-                             <span class="per-person">Mulai dari</span>
-                             <span class="promo-price">Rp 255rb</span>
-                             <span class="original-price">Rp 270rb</span>
-                        </div>
-                        <a href="#booking" class="cta-button">Pilih Paket Ini</a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="wave-separator">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320"><path fill="#ffffff" fill-opacity="1" d="M0,160L48,176C96,192,192,224,288,213.3C384,203,480,149,576,149.3C672,149,768,203,864,229.3C960,256,1056,256,1152,234.7C1248,213,1344,171,1392,149.3L1440,128L1440,0L1392,0C1344,0,1248,0,1152,0C1056,0,960,0,864,0C768,0,672,0,576,0C480,0,384,0,288,0C192,0,96,0,48,0L0,0Z"></path></svg>
-    </div>
-
-    <section class="menu-section">
-        <div class="container animated">
-            <h2>PILIHAN MENU MAKAN SIANG SPESIAL</h2>
-            <p class="intro-text" style="margin-bottom: 20px;">Setiap paket sudah termasuk satu set menu lengkap (pilih salah satu):</p>
-            <div class="menu-container">
-                <div class="menu-card">
-                    <h3>Set Menu A</h3>
-                    <ul>
-                        <li>Nasi Putih</li>
-                        <li>Ayam Lada Hitam</li>
-                        <li>Capcay</li>
-                        <li>Soun Jamur</li>
-                        <li>Bakso Kuah</li>
-                        <li>Kerupuk</li>
-                        <li>Bolu Gulung</li>
-                        <li>Teh</li>
-                    </ul>
-                </div>
-                <div class="menu-card">
-                    <h3>Set Menu B</h3>
-                    <ul>
-                        <li>Nasi Putih</li>
-                        <li>Kakap Asam Manis</li>
-                        <li>Ayam Goreng Mentega</li>
-                        <li>Tumis Buncis Daging Sapi</li>
-                        <li>Sambal</li>
-                        <li>Kerupuk</li>
-                        <li>Buah Potong</li>
-                        <li>Teh</li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-    </section>
-    
-    <div id="booking">
-        <section class="final-cta">
-            <div class="container">
-                <h2>Siap Berpetualang?</h2>
-                <p>Jangan lewatkan kesempatan untuk merasakan petualangan tak terlupakan di Salatiga. Hubungi kami sekarang untuk reservasi dan informasi lebih lanjut!</p>
-                <a href="https://wa.me/628123456789" class="cta-button" style="padding: 15px 40px; font-size: 1.1em;">Pesan via WhatsApp</a>
-            </div>
+        <section class="counter-display">
+            <h2>Jumlah Klaim Hari Ini</h2>
+            <div id="count">0</div>
         </section>
+
+        <section class="input-form">
+            <input type="text" id="username-input" placeholder="Username Instagram (tanpa @)" autocomplete="off">
+            <button id="claim-button">Klaim</button>
+        </section>
+
+        <section class="username-section">
+            <h3>Daftar Pengklaim Hari Ini:</h3>
+            <ul id="username-list"></ul>
+        </section>
+        
+        <button class="reset-button" id="reset-button">Reset Data Hari Ini</button>
     </div>
 
+    <script>
+        // =======================================================
+        // KONFIGURASI FIREBASE ANDA
+        // =======================================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyDCb05RERgaTWE8RxkrP5WXtTCz-VhTbwI",
+            authDomain: "member-ds.firebaseapp.com",
+            // Tambahkan databaseURL sesuai dengan URL Realtime Database Anda
+            databaseURL: "https://member-ds-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "member-ds",
+            storageBucket: "member-ds.appspot.com",
+            messagingSenderId: "535886260606",
+            appId: "1:535886260606:web:4d83a22f6eae5af11cab2f"
+        };
+
+        // Inisialisasi Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        // =======================================================
+        // LOGIKA APLIKASI
+        // =======================================================
+        document.addEventListener('DOMContentLoaded', () => {
+            const dateDisplay = document.getElementById('date-display');
+            const countElement = document.getElementById('count');
+            const usernameInput = document.getElementById('username-input');
+            const claimButton = document.getElementById('claim-button');
+            const usernameList = document.getElementById('username-list');
+            const resetButton = document.getElementById('reset-button');
+            
+            let currentData = { count: 0, usernames: [] }; // Variabel untuk menyimpan data hari ini
+
+            const getTodayDateString = () => {
+                const today = new Date();
+                const year = today.getFullYear();
+                const month = String(today.getMonth() + 1).padStart(2, '0');
+                const day = String(today.getDate()).padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            };
+
+            const todayKey = getTodayDateString();
+            // DATABASE REFERENCE: Menunjuk ke 'path' di database tempat data akan disimpan.
+            // Contoh: /voucherClaims/2025-08-23
+            const todayDbRef = database.ref('voucherClaims/' + todayKey);
+
+            // Fungsi untuk memperbarui tampilan (UI)
+            const updateUI = () => {
+                const today = new Date();
+                const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+                dateDisplay.textContent = today.toLocaleString('id-ID', options);
+
+                countElement.textContent = currentData.count;
+
+                usernameList.innerHTML = '';
+                if (!currentData.usernames || currentData.usernames.length === 0) {
+                    const li = document.createElement('li');
+                    li.textContent = 'Belum ada yang melakukan klaim hari ini.';
+                    li.style.fontStyle = 'italic';
+                    li.style.color = '#7f8c8d';
+                    usernameList.appendChild(li);
+                } else {
+                    // Firebase dapat menyimpan array sebagai objek, jadi kita ubah kembali ke array jika perlu
+                    const usernamesArray = Array.isArray(currentData.usernames) ? currentData.usernames : Object.values(currentData.usernames);
+                    usernamesArray.forEach(username => {
+                        const li = document.createElement('li');
+                        li.textContent = username;
+                        usernameList.appendChild(li);
+                    });
+                }
+            };
+            
+            // REALTIME LISTENER: onValue() akan berjalan sekali saat awal,
+            // dan akan berjalan lagi setiap kali ada perubahan data di path 'todayDbRef'
+            todayDbRef.on('value', (snapshot) => {
+                if (snapshot.exists()) {
+                    currentData = snapshot.val();
+                    // Pastikan struktur data selalu benar
+                    if (!currentData.usernames) {
+                        currentData.usernames = [];
+                    }
+                } else {
+                    currentData = { count: 0, usernames: [] };
+                }
+                updateUI(); // Perbarui UI setiap kali data dari Firebase diterima
+            });
+
+            // Fungsi saat tombol "Klaim" ditekan
+            const handleClaim = () => {
+                const username = usernameInput.value.trim().toLowerCase();
+                if (!username) {
+                    alert('Username tidak boleh kosong!');
+                    return;
+                }
+                
+                // Pastikan data usernames adalah array sebelum mengecek
+                const usernamesArray = Array.isArray(currentData.usernames) ? currentData.usernames : (currentData.usernames ? Object.values(currentData.usernames) : []);
+                
+                if (usernamesArray.includes(username)) {
+                    alert(`Username "${username}" sudah pernah melakukan klaim hari ini!`);
+                    return;
+                }
+
+                // Update data secara lokal
+                const newCount = currentData.count + 1;
+                const newUsernames = [...usernamesArray, username];
+
+                // Kirim data baru ke Firebase
+                todayDbRef.set({
+                    count: newCount,
+                    usernames: newUsernames
+                });
+                
+                usernameInput.value = '';
+                usernameInput.focus();
+            };
+            
+            const handleReset = () => {
+                if (confirm('Apakah Anda yakin ingin mereset semua data klaim untuk hari ini di server?')) {
+                    // Menghapus data di path tersebut atau mengaturnya kembali ke nilai default
+                    todayDbRef.set({ count: 0, usernames: [] });
+                    alert('Data untuk hari ini di server berhasil direset.');
+                }
+            };
+
+            claimButton.addEventListener('click', handleClaim);
+            resetButton.addEventListener('click', handleReset);
+            usernameInput.addEventListener('keypress', (event) => {
+                if (event.key === 'Enter') handleClaim();
+            });
+        });
+    </script>
 </body>
 </html>

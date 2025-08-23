@@ -92,7 +92,6 @@
         const firebaseConfig = {
             apiKey: "AIzaSyDCb05RERgaTWE8RxkrP5WXtTCz-VhTbwI",
             authDomain: "member-ds.firebaseapp.com",
-            // Tambahkan databaseURL sesuai dengan URL Realtime Database Anda
             databaseURL: "https://member-ds-default-rtdb.asia-southeast1.firebasedatabase.app",
             projectId: "member-ds",
             storageBucket: "member-ds.appspot.com",
@@ -115,7 +114,7 @@
             const usernameList = document.getElementById('username-list');
             const resetButton = document.getElementById('reset-button');
             
-            let currentData = { count: 0, usernames: [] }; // Variabel untuk menyimpan data hari ini
+            let currentData = { count: 0, usernames: [] };
 
             const getTodayDateString = () => {
                 const today = new Date();
@@ -126,11 +125,8 @@
             };
 
             const todayKey = getTodayDateString();
-            // DATABASE REFERENCE: Menunjuk ke 'path' di database tempat data akan disimpan.
-            // Contoh: /voucherClaims/2025-08-23
             const todayDbRef = database.ref('voucherClaims/' + todayKey);
 
-            // Fungsi untuk memperbarui tampilan (UI)
             const updateUI = () => {
                 const today = new Date();
                 const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
@@ -146,7 +142,6 @@
                     li.style.color = '#7f8c8d';
                     usernameList.appendChild(li);
                 } else {
-                    // Firebase dapat menyimpan array sebagai objek, jadi kita ubah kembali ke array jika perlu
                     const usernamesArray = Array.isArray(currentData.usernames) ? currentData.usernames : Object.values(currentData.usernames);
                     usernamesArray.forEach(username => {
                         const li = document.createElement('li');
@@ -156,22 +151,18 @@
                 }
             };
             
-            // REALTIME LISTENER: onValue() akan berjalan sekali saat awal,
-            // dan akan berjalan lagi setiap kali ada perubahan data di path 'todayDbRef'
             todayDbRef.on('value', (snapshot) => {
                 if (snapshot.exists()) {
                     currentData = snapshot.val();
-                    // Pastikan struktur data selalu benar
                     if (!currentData.usernames) {
                         currentData.usernames = [];
                     }
                 } else {
                     currentData = { count: 0, usernames: [] };
                 }
-                updateUI(); // Perbarui UI setiap kali data dari Firebase diterima
+                updateUI();
             });
 
-            // Fungsi saat tombol "Klaim" ditekan
             const handleClaim = () => {
                 const username = usernameInput.value.trim().toLowerCase();
                 if (!username) {
@@ -179,7 +170,6 @@
                     return;
                 }
                 
-                // Pastikan data usernames adalah array sebelum mengecek
                 const usernamesArray = Array.isArray(currentData.usernames) ? currentData.usernames : (currentData.usernames ? Object.values(currentData.usernames) : []);
                 
                 if (usernamesArray.includes(username)) {
@@ -187,11 +177,9 @@
                     return;
                 }
 
-                // Update data secara lokal
                 const newCount = currentData.count + 1;
                 const newUsernames = [...usernamesArray, username];
 
-                // Kirim data baru ke Firebase
                 todayDbRef.set({
                     count: newCount,
                     usernames: newUsernames
@@ -201,11 +189,29 @@
                 usernameInput.focus();
             };
             
+            // --- FUNGSI YANG DIEDIT ---
             const handleReset = () => {
-                if (confirm('Apakah Anda yakin ingin mereset semua data klaim untuk hari ini di server?')) {
-                    // Menghapus data di path tersebut atau mengaturnya kembali ke nilai default
-                    todayDbRef.set({ count: 0, usernames: [] });
-                    alert('Data untuk hari ini di server berhasil direset.');
+                // Tentukan password di sini
+                const resetPassword = 'fusion437666'; 
+                
+                // Minta pengguna memasukkan password
+                const enteredPassword = prompt("Masukkan password administrator untuk mereset data:");
+
+                // Jika pengguna menekan "Batal", hentikan fungsi
+                if (enteredPassword === null) {
+                    return; 
+                }
+
+                // Periksa apakah password yang dimasukkan benar
+                if (enteredPassword === resetPassword) {
+                    // Beri konfirmasi terakhir sebelum mereset
+                    if (confirm('Password benar. Apakah Anda YAKIN ingin mereset data hari ini? Aksi ini tidak dapat dibatalkan.')) {
+                        todayDbRef.set({ count: 0, usernames: [] });
+                        alert('Data untuk hari ini di server berhasil direset.');
+                    }
+                } else {
+                    // Jika password salah
+                    alert('Password salah! Aksi dibatalkan.');
                 }
             };
 

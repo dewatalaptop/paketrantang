@@ -15,6 +15,7 @@
             --primary-green: #2ecc71; --dark-green: #27ae60; --primary-orange: #e67e22;
             --dark-orange: #d35400; --light-bg: #f7f9f9; --dark-text: #34495e;
             --light-text: #ffffff; --border-color: #ecf0f1; --shadow-color: rgba(0, 0, 0, 0.1);
+            --info-blue: #3498db; --dark-blue: #2980b9;
         }
         body {
             font-family: 'Poppins', sans-serif; background-color: var(--light-bg); color: var(--dark-text);
@@ -33,7 +34,7 @@
             color: var(--light-text); padding: 20px; border-radius: 10px; margin-bottom: 30px;
         }
         .counter-display h2 { margin: 0 0 10px 0; font-size: 1.2rem; font-weight: 400; opacity: 0.9; }
-        .counter-display #count { font-size: 4rem; font-weight: 700; line-height: 1; }
+        .counter-display #count, .counter-display .detail-count { font-size: 4rem; font-weight: 700; line-height: 1; }
         .input-form { display: flex; gap: 10px; margin-bottom: 30px; }
         .input-form input {
             flex-grow: 1; padding: 15px; border: 2px solid var(--border-color); border-radius: 8px;
@@ -48,41 +49,98 @@
         .input-form button:hover { background-color: var(--dark-orange); transform: translateY(-2px); }
         .username-section { text-align: left; }
         .username-section h3 { border-bottom: 2px solid var(--border-color); padding-bottom: 10px; margin-bottom: 15px; }
-        #username-list { list-style: none; padding: 0; margin: 0; max-height: 200px; overflow-y: auto; }
-        #username-list li {
+        #username-list, #history-list, #history-detail-usernames { list-style: none; padding: 0; margin: 0; max-height: 200px; overflow-y: auto; }
+        #username-list li, #history-list li, #history-detail-usernames li {
             background-color: var(--light-bg); padding: 12px 15px; border-radius: 6px;
             margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;
         }
-        .reset-button {
-            margin-top: 30px; background: none; border: 2px solid #e74c3c; color: #e74c3c;
-            padding: 10px 20px; border-radius: 8px; cursor: pointer; transition: background-color 0.3s, color 0.3s;
+        /* Style baru untuk item histori yang bisa diklik */
+        #history-list li {
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.2s;
         }
+        #history-list li:hover {
+            background-color: #e9ecef;
+            transform: translateX(5px);
+        }
+
+        .button-group { display: flex; flex-direction: column; gap: 10px; margin-top: 30px;}
+        .app-button {
+            padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: 600;
+            transition: background-color 0.3s, color 0.3s, transform 0.2s; border: 2px solid transparent;
+        }
+        .app-button:hover { transform: translateY(-2px); }
+
+        .reset-button { background: none; border-color: #e74c3c; color: #e74c3c; }
         .reset-button:hover { background-color: #e74c3c; color: var(--light-text); }
+        
+        .history-button { background-color: var(--info-blue); color: var(--light-text); }
+        .history-button:hover { background-color: var(--dark-blue); }
+
+        .back-button { background: none; border-color: #7f8c8d; color: #7f8c8d; margin-bottom: 20px; align-self: flex-start;}
+        .back-button:hover { background-color: #7f8c8d; color: var(--light-text); }
+        
+        #history-view header { position: relative; } /* Untuk posisi tombol kembali */
     </style>
 </head>
 <body>
     <div class="app-container">
-        <header>
-            <h1>Klaim Voucher Instagram Dolan Sawah</h1>
-            <p id="date-display">Menghubungkan ke server...</p>
-        </header>
 
-        <section class="counter-display">
-            <h2>Jumlah Klaim Hari Ini</h2>
-            <div id="count">0</div>
-        </section>
+        <div id="main-view">
+            <header>
+                <h1>Klaim Voucher Instagram Dolan Sawah</h1>
+                <p id="date-display">Menghubungkan ke server...</p>
+            </header>
 
-        <section class="input-form">
-            <input type="text" id="username-input" placeholder="Username Instagram (tanpa @)" autocomplete="off">
-            <button id="claim-button">Klaim</button>
-        </section>
+            <section class="counter-display">
+                <h2>Jumlah Klaim Hari Ini</h2>
+                <div id="count">0</div>
+            </section>
 
-        <section class="username-section">
-            <h3>Daftar Pengklaim Hari Ini:</h3>
-            <ul id="username-list"></ul>
-        </section>
-        
-        <button class="reset-button" id="reset-button">Reset Data Hari Ini</button>
+            <section class="input-form">
+                <input type="text" id="username-input" placeholder="Username Instagram (tanpa @)" autocomplete="off">
+                <button id="claim-button">Klaim</button>
+            </section>
+
+            <section class="username-section">
+                <h3>Daftar Pengklaim Hari Ini:</h3>
+                <ul id="username-list"></ul>
+            </section>
+            
+            <div class="button-group">
+                <button class="app-button history-button" id="history-button">Lihat Histori Klaim</button>
+                <button class="app-button reset-button" id="reset-button">Reset Data Hari Ini</button>
+            </div>
+        </div>
+
+        <div id="history-view" style="display: none;">
+             <button class="app-button back-button" id="back-to-main-button">← Kembali</button>
+
+            <div id="history-list-container">
+                <header>
+                    <h1>Histori Klaim Voucher</h1>
+                    <p>Pilih tanggal untuk melihat detail.</p>
+                </header>
+                <ul id="history-list">
+                    </ul>
+            </div>
+
+            <div id="history-detail-container" style="display: none;">
+                <button class="app-button back-button" id="back-to-history-list-button">← Kembali ke Daftar Histori</button>
+                <header>
+                    <h1 id="history-detail-date">Detail Tanggal</h1>
+                </header>
+                 <section class="counter-display" style="background: linear-gradient(135deg, var(--info-blue), var(--dark-blue));">
+                    <h2>Total Klaim</h2>
+                    <div class="detail-count" id="history-detail-count">0</div>
+                </section>
+                <section class="username-section">
+                    <h3>Daftar Pengklaim:</h3>
+                    <ul id="history-detail-usernames">
+                        </ul>
+                </section>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -107,12 +165,26 @@
         // LOGIKA APLIKASI
         // =======================================================
         document.addEventListener('DOMContentLoaded', () => {
+            // --- Elemen Tampilan Utama ---
+            const mainView = document.getElementById('main-view');
             const dateDisplay = document.getElementById('date-display');
             const countElement = document.getElementById('count');
             const usernameInput = document.getElementById('username-input');
             const claimButton = document.getElementById('claim-button');
             const usernameList = document.getElementById('username-list');
             const resetButton = document.getElementById('reset-button');
+            const historyButton = document.getElementById('history-button');
+
+            // --- Elemen Tampilan Histori ---
+            const historyView = document.getElementById('history-view');
+            const historyListContainer = document.getElementById('history-list-container');
+            const historyList = document.getElementById('history-list');
+            const historyDetailContainer = document.getElementById('history-detail-container');
+            const historyDetailDate = document.getElementById('history-detail-date');
+            const historyDetailCount = document.getElementById('history-detail-count');
+            const historyDetailUsernames = document.getElementById('history-detail-usernames');
+            const backToMainButton = document.getElementById('back-to-main-button');
+            const backToHistoryListButton = document.getElementById('back-to-history-list-button');
             
             let currentData = { count: 0, usernames: [] };
 
@@ -123,26 +195,44 @@
                 const day = String(today.getDate()).padStart(2, '0');
                 return `${year}-${month}-${day}`;
             };
+            
+            const formatDate = (dateString) => {
+                const [year, month, day] = dateString.split('-');
+                const date = new Date(year, month - 1, day);
+                return date.toLocaleString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            };
 
             const todayKey = getTodayDateString();
             const todayDbRef = database.ref('voucherClaims/' + todayKey);
+            const allClaimsDbRef = database.ref('voucherClaims');
+
+            // --- Fungsi untuk mengelola tampilan ---
+            const showView = (viewName) => {
+                mainView.style.display = 'none';
+                historyView.style.display = 'none';
+                if (viewName === 'main') {
+                    mainView.style.display = 'block';
+                } else if (viewName === 'history') {
+                    historyView.style.display = 'block';
+                    historyListContainer.style.display = 'block';
+                    historyDetailContainer.style.display = 'none';
+                }
+            };
 
             const updateUI = () => {
-                const today = new Date();
-                const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-                dateDisplay.textContent = today.toLocaleString('id-ID', options);
-
+                dateDisplay.textContent = formatDate(getTodayDateString());
                 countElement.textContent = currentData.count;
 
                 usernameList.innerHTML = '';
-                if (!currentData.usernames || currentData.usernames.length === 0) {
+                const usernamesArray = Array.isArray(currentData.usernames) ? currentData.usernames : (currentData.usernames ? Object.values(currentData.usernames) : []);
+
+                if (usernamesArray.length === 0) {
                     const li = document.createElement('li');
                     li.textContent = 'Belum ada yang melakukan klaim hari ini.';
                     li.style.fontStyle = 'italic';
                     li.style.color = '#7f8c8d';
                     usernameList.appendChild(li);
                 } else {
-                    const usernamesArray = Array.isArray(currentData.usernames) ? currentData.usernames : Object.values(currentData.usernames);
                     usernamesArray.forEach(username => {
                         const li = document.createElement('li');
                         li.textContent = username;
@@ -154,9 +244,7 @@
             todayDbRef.on('value', (snapshot) => {
                 if (snapshot.exists()) {
                     currentData = snapshot.val();
-                    if (!currentData.usernames) {
-                        currentData.usernames = [];
-                    }
+                    if (!currentData.usernames) currentData.usernames = [];
                 } else {
                     currentData = { count: 0, usernames: [] };
                 }
@@ -180,45 +268,88 @@
                 const newCount = currentData.count + 1;
                 const newUsernames = [...usernamesArray, username];
 
-                todayDbRef.set({
-                    count: newCount,
-                    usernames: newUsernames
-                });
+                todayDbRef.set({ count: newCount, usernames: newUsernames });
                 
                 usernameInput.value = '';
                 usernameInput.focus();
             };
             
-            // --- FUNGSI YANG DIEDIT ---
             const handleReset = () => {
-                // Tentukan password di sini
                 const resetPassword = 'fusion437666'; 
-                
-                // Minta pengguna memasukkan password
                 const enteredPassword = prompt("Masukkan password administrator untuk mereset data:");
+                if (enteredPassword === null) return; 
 
-                // Jika pengguna menekan "Batal", hentikan fungsi
-                if (enteredPassword === null) {
-                    return; 
-                }
-
-                // Periksa apakah password yang dimasukkan benar
                 if (enteredPassword === resetPassword) {
-                    // Beri konfirmasi terakhir sebelum mereset
                     if (confirm('Password benar. Apakah Anda YAKIN ingin mereset data hari ini? Aksi ini tidak dapat dibatalkan.')) {
                         todayDbRef.set({ count: 0, usernames: [] });
                         alert('Data untuk hari ini di server berhasil direset.');
                     }
                 } else {
-                    // Jika password salah
                     alert('Password salah! Aksi dibatalkan.');
                 }
             };
 
+            // --- Fungsi untuk Logika Histori ---
+            const handleShowHistory = () => {
+                showView('history');
+                historyList.innerHTML = '<li>Memuat data histori...</li>';
+
+                allClaimsDbRef.once('value').then((snapshot) => {
+                    historyList.innerHTML = '';
+                    if (snapshot.exists()) {
+                        const allData = snapshot.val();
+                        const sortedDates = Object.keys(allData).sort().reverse(); // Urutkan dari terbaru
+                        
+                        sortedDates.forEach(dateKey => {
+                            const data = allData[dateKey];
+                            const li = document.createElement('li');
+                            li.innerHTML = `<strong>${formatDate(dateKey)}</strong> <span>${data.count || 0} Klaim</span>`;
+                            li.addEventListener('click', () => showHistoryDetail(dateKey, data));
+                            historyList.appendChild(li);
+                        });
+                    } else {
+                         historyList.innerHTML = '<li>Belum ada data histori yang tersimpan.</li>';
+                    }
+                });
+            };
+
+            const showHistoryDetail = (dateKey, data) => {
+                historyListContainer.style.display = 'none';
+                historyDetailContainer.style.display = 'block';
+
+                historyDetailDate.textContent = `Detail: ${formatDate(dateKey)}`;
+                historyDetailCount.textContent = data.count || 0;
+                
+                historyDetailUsernames.innerHTML = '';
+                const usernamesArray = Array.isArray(data.usernames) ? data.usernames : (data.usernames ? Object.values(data.usernames) : []);
+
+                if(usernamesArray.length > 0) {
+                    usernamesArray.forEach(username => {
+                        const li = document.createElement('li');
+                        li.textContent = username;
+                        historyDetailUsernames.appendChild(li);
+                    });
+                } else {
+                    const li = document.createElement('li');
+                    li.textContent = 'Tidak ada username yang tercatat.';
+                    li.style.fontStyle = 'italic';
+                    historyDetailUsernames.appendChild(li);
+                }
+            };
+
+            // --- Event Listeners ---
             claimButton.addEventListener('click', handleClaim);
             resetButton.addEventListener('click', handleReset);
             usernameInput.addEventListener('keypress', (event) => {
                 if (event.key === 'Enter') handleClaim();
+            });
+
+            // --- Event Listeners untuk Navigasi Baru ---
+            historyButton.addEventListener('click', handleShowHistory);
+            backToMainButton.addEventListener('click', () => showView('main'));
+            backToHistoryListButton.addEventListener('click', () => {
+                historyDetailContainer.style.display = 'none';
+                historyListContainer.style.display = 'block';
             });
         });
     </script>

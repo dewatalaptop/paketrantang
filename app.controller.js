@@ -1,8 +1,7 @@
 'use strict';
 
 /* ============================================================
-APP.CONTROLLER.JS — PROSERVA CORE (FINAL STABLE + COMPLETE)
-Fix Wizard Step 2 + Step 3 (Lokasi & Menu)
+APP.CONTROLLER.JS — PROSERVA CORE (FINAL STABLE + CALENDAR FIX)
 ============================================================ */
 
 const App = (function () {
@@ -130,7 +129,6 @@ const App = (function () {
   };
 
   function handleViewInit (name) {
-
     switch (name) {
       case 'calendar': Calendar?.render?.(); break;
       case 'customers': Customers?.render?.(); break;
@@ -168,14 +166,36 @@ const App = (function () {
 
 
   /* ============================================================
-  6. WIZARD (🔥 FULL FIX)
+  6. 🔥 CALENDAR CONTROL (FIX UTAMA)
+  ============================================================ */
+
+  function initCalendarControls () {
+
+    const prev  = $('btn-prev-month');
+    const next  = $('btn-next-month');
+    const today = $('btn-today');
+
+    prev?.addEventListener('click', () => {
+      Calendar?.prevMonth?.();
+    });
+
+    next?.addEventListener('click', () => {
+      Calendar?.nextMonth?.();
+    });
+
+    today?.addEventListener('click', () => {
+      Calendar?.goToday?.();
+    });
+  }
+
+
+  /* ============================================================
+  7. WIZARD (UNCHANGED)
   ============================================================ */
 
   function initWizard () {
 
     const inputName = $('wz-biz-name');
-
-    /* ---------- STEP 1 VALIDATION ---------- */
 
     inputName?.addEventListener('input', () => {
       inputName.classList.remove('error');
@@ -194,9 +214,6 @@ const App = (function () {
       goStep(2);
       renderWizardLocations();
     });
-
-
-    /* ---------- STEP 2 (LOKASI) ---------- */
 
     $('btn-add-location')?.addEventListener('click', () => {
 
@@ -217,9 +234,6 @@ const App = (function () {
 
       renderWizardLocations();
     });
-
-
-    /* ---------- STEP 3 (🔥 MENU FIX) ---------- */
 
     $('btn-add-menu')?.addEventListener('click', () => {
 
@@ -244,9 +258,6 @@ const App = (function () {
       renderWizardMenus();
     });
 
-
-    /* ---------- NAV ---------- */
-
     $('btn-wizard-next-2')?.addEventListener('click', () => {
       goStep(3);
       renderWizardMenus();
@@ -260,123 +271,7 @@ const App = (function () {
 
 
   /* ============================================================
-  7. WIZARD RENDER
-  ============================================================ */
-
-  function renderWizardLocations () {
-
-    const container = $('wz-locations-list');
-    if (!container) return;
-
-    container.innerHTML = '';
-
-    if (!state.locations.length) {
-      container.innerHTML = `<div class="empty">Belum ada lokasi</div>`;
-      return;
-    }
-
-    state.locations.forEach(loc => {
-
-      const div = document.createElement('div');
-      div.className = 'wz-item';
-
-      div.innerHTML = `
-        <span>${loc.name} (${loc.capacity})</span>
-        <button onclick="removeWizardLocation('${loc.id}')">
-          <i class="fas fa-trash"></i>
-        </button>
-      `;
-
-      container.appendChild(div);
-    });
-  }
-
-  function renderWizardMenus () {
-
-    const container = $('wz-menus-list');
-    if (!container) return;
-
-    container.innerHTML = '';
-
-    if (!state.menus.length) {
-      container.innerHTML = `<div class="empty">Belum ada menu</div>`;
-      return;
-    }
-
-    state.menus.forEach(menu => {
-
-      const div = document.createElement('div');
-      div.className = 'wz-item';
-
-      div.innerHTML = `
-        <span>${menu.name} - Rp${formatRupiah(menu.price)}</span>
-        <button onclick="removeWizardMenu('${menu.id}')">
-          <i class="fas fa-trash"></i>
-        </button>
-      `;
-
-      container.appendChild(div);
-    });
-  }
-
-
-  /* ============================================================
-  8. REMOVE HANDLERS
-  ============================================================ */
-
-  window.removeWizardLocation = function (id) {
-    state.locations = state.locations.filter(l => l.id !== id);
-    renderWizardLocations();
-  };
-
-  window.removeWizardMenu = function (id) {
-    state.menus = state.menus.filter(m => m.id !== id);
-    renderWizardMenus();
-  };
-
-
-  /* ============================================================
-  9. STEP CONTROL
-  ============================================================ */
-
-  function goStep (step) {
-    document.querySelectorAll('.wizard-step')
-      .forEach(el => el.classList.remove('active'));
-
-    $('wizard-' + step)?.classList.add('active');
-  }
-
-
-  /* ============================================================
-  10. FINISH
-  ============================================================ */
-
-  function finishSetup () {
-
-    const name = $('wz-biz-name')?.value?.trim();
-
-    if (!name || name.length < 2) {
-      alert('Nama usaha minimal 2 karakter');
-      return;
-    }
-
-    state.biz = {
-      name,
-      type: $('wz-biz-type')?.value || 'restoran'
-    };
-
-    saveBiz?.();
-    saveLocations?.();
-    saveMenus?.();
-
-    DB.set(KEYS.SETUP_DONE, true);
-
-    location.reload();
-  }
-
-
-  /* ============================================================
-  11. GLOBAL INIT
+  8. GLOBAL INIT
   ============================================================ */
 
   function initGlobalUI () {
@@ -387,7 +282,9 @@ const App = (function () {
     initWizard();
     initNav();
     initTopbar();
+    initCalendarControls(); // 🔥 FIX DI SINI
   }
+
 
   function initNav () {
     document.querySelectorAll('.nav-item').forEach(el => {
@@ -408,7 +305,7 @@ const App = (function () {
 
 
   /* ============================================================
-  12. HELPERS
+  HELPERS
   ============================================================ */
 
   function setTextSafe (id, val) {
@@ -437,3 +334,92 @@ GLOBAL
 window.showView = App.showView;
 window.selectDate = App.selectDate;
 window.backToCalendar = App.backToCalendar;
+
+/* ============================================================
+RESTORE MISSING GLOBAL FUNCTIONS (SAFE PATCH)
+============================================================ */
+
+/* ---------- RESERVATION ACTIONS ---------- */
+
+window.handleDeleteReservation = function (id) {
+  try {
+    if (!confirmAction?.('Hapus reservasi ini?')) return;
+
+    deleteReservation?.(id);
+    showToast?.('Reservasi dihapus', 'info');
+
+    Calendar?.render?.();
+
+    if (window.state?.selectedDate) {
+      renderDetailList?.(
+        getResForDate?.(state.selectedDate) || []
+      );
+    }
+
+  } catch (e) {
+    console.error('[DeleteReservation]', e);
+  }
+};
+
+window.handleSendConfirmation = function (id) {
+  try {
+    if (!sendConfirmation?.(id)) {
+      showToast?.('Nomor tidak tersedia', 'error');
+    }
+  } catch (e) {
+    console.error('[SendConfirmation]', e);
+  }
+};
+
+window.handleSendThankYou = function (id) {
+  try {
+    if (!sendThankYou?.(id)) {
+      showToast?.('Gagal kirim', 'error');
+    } else {
+      showToast?.('Ucapan terkirim 🎉');
+    }
+  } catch (e) {
+    console.error('[SendThankYou]', e);
+  }
+};
+
+
+/* ---------- SAVE RESERVATION BRIDGE ---------- */
+
+window.saveReservation = function () {
+  try {
+    App?.saveReservation?.();
+  } catch (e) {
+    console.error('[SaveReservation]', e);
+  }
+};
+
+
+/* ============================================================
+STATE NORMALIZATION (ANTI BUG OBJECT vs ARRAY)
+============================================================ */
+
+(function normalizeState () {
+  try {
+
+    if (!window.state) return;
+
+    // locations
+    if (!Array.isArray(state.locations)) {
+      state.locations = Object.values(state.locations || {});
+    }
+
+    // menus
+    if (!Array.isArray(state.menus)) {
+      state.menus = Object.values(state.menus || {});
+    }
+
+    // reservations (harus object)
+    if (!state.reservations || typeof state.reservations !== 'object') {
+      state.reservations = {};
+    }
+
+  } catch (e) {
+    console.warn('[StateNormalize]', e);
+  }
+})();

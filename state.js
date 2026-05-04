@@ -1,107 +1,105 @@
 'use strict';
 
 /* ============================================================
-STATE.JS — PROSERVA CORE
-Central App State + Persistence Layer
+STATE.JS — PROSERVA CORE (REWRITE)
+Robust • Safe • Scalable
 ============================================================ */
 
 /* ============================================================
-1. GLOBAL STATE (Single Source of Truth)
+1. DEFAULT STATE
 ============================================================ */
-var state = {
 
-  /* ===== BUSINESS ===== */
+const DEFAULT_STATE = {
+  version: 1,
+
   biz: {
     name: 'Usaha Saya',
     type: 'restoran'
   },
 
-  /* ===== MASTER DATA ===== */
-  menus: {},
-  locations: {},
-
-  /* ===== TRANSACTION ===== */
+  menus: [],
+  locations: [],
   reservations: {},
 
-  /* ===== CALENDAR ===== */
   currentMonth: new Date().getMonth(),
-  currentYear:  new Date().getFullYear(),
+  currentYear: new Date().getFullYear(),
   selectedDate: null,
 
-  /* ===== ANALYSIS ===== */
   anlChart: null,
-
-  /* ===== BROADCAST ===== */
   bcList: [],
 
-  /* ===== SYSTEM ===== */
   notifInterval: null
 };
 
 /* ============================================================
-2. LOAD STATE FROM STORAGE
+2. GLOBAL STATE (SINGLE SOURCE)
 ============================================================ */
+
+var state = structuredCloneSafe(DEFAULT_STATE);
+
+/* ============================================================
+3. LOAD STATE (SAFE + NORMALIZE)
+============================================================ */
+
 function loadState () {
+  try {
 
-  state.biz = DB.get(KEYS.BIZ, {
-    name: 'Usaha Saya',
-    type: 'restoran'
-  });
+    const biz         = safeGet(KEYS.BIZ, DEFAULT_STATE.biz);
+    const menus       = normalizeArray(DB.get(KEYS.MENUS, []));
+    const locations   = normalizeArray(DB.get(KEYS.LOCATIONS, []));
+    const reservations= normalizeReservations(DB.get(KEYS.RESERVATIONS, {}));
 
-  state.menus = DB.get(KEYS.MENUS, {});
-  state.locations = DB.get(KEYS.LOCATIONS, {});
-  state.reservations = DB.get(KEYS.RESERVATIONS, {});
+    state.biz = sanitizeBiz(biz);
+    state.menus = menus;
+    state.locations = locations;
+    state.reservations = reservations;
+
+  } catch (e) {
+    console.error('[STATE LOAD ERROR]', e);
+    hardReset();
+  }
 }
 
 /* ============================================================
-3. SAVE HELPERS (Granular)
+4. SAVE HELPERS (SAFE)
 ============================================================ */
 
-/**
- * Save business info
- */
 function saveBiz () {
-  DB.set(KEYS.BIZ, state.biz);
+  safeSet(KEYS.BIZ, state.biz);
 }
 
-/**
- * Save menus
- */
 function saveMenus () {
-  DB.set(KEYS.MENUS, state.menus);
+  safeSet(KEYS.MENUS, state.menus);
 }
 
-/**
- * Save locations
- */
 function saveLocations () {
-  DB.set(KEYS.LOCATIONS, state.locations);
+  safeSet(KEYS.LOCATIONS, state.locations);
 }
 
-/**
- * Save reservations
- */
 function saveReservations () {
-  DB.set(KEYS.RESERVATIONS, state.reservations);
+  safeSet(KEYS.RESERVATIONS, state.reservations);
 }
 
 /* ============================================================
-4. RESET STATE (Used by trial / logout)
+5. RESET (SAFE)
 ============================================================ */
+
 function resetState () {
+  state = structuredCloneSafe(DEFAULT_STATE);
 
-  state.biz = {
-    name: 'Usaha Saya',
-    type: 'restoran'
-  };
+  persistAll();
+}
 
-  state.menus = {};
-  state.locations = {};
-  state.reservations = {};
+function hardReset () {
+  console.warn('[STATE] Hard reset triggered');
+  resetState();
+}
 
-  state.selectedDate = null;
-  state.bcList = [];
+/* ============================================================
+6. PERSIST ALL
+============================================================ */
 
+function persistAll () {
   saveBiz();
   saveMenus();
   saveLocations();
@@ -109,13 +107,102 @@ function resetState () {
 }
 
 /* ============================================================
-5. SAFE GUARD (DEV CHECK)
+7. NORMALIZATION
 ============================================================ */
+
+function normalizeArray (data) {
+  if (!Array.isArray(data)) return [];
+  return data.filter(Boolean);
+}
+
+function normalizeReservations (data) {
+  if (!data || typeof data !== 'object') return {};
+
+  const clean = {};
+
+  for (const mk in data) {
+    if (!Array.isArray(data[mk])) continue;
+
+    clean[mk] = data[mk].map(normalizeReservationSafe);
+  }
+
+  return clean;
+}
+
+function normalizeReservationSafe (r) {
+  if (!r || typeof r !== 'object') return null;
+
+  return {
+    id: r.id || genId?.(),
+    date: r.date || '',
+    nama: r.nama || '',
+    nomorHp: r.nomorHp || '',
+    jam: r.jam || '',
+    jumlah: Number(r.jumlah) || 1,
+    tempat: r.tempat || '',
+    dp: Number(r.dp) || 0,
+    tipeDp: r.tipeDp || '',
+    tambahan: r.tambahan || '',
+    menus: Array.isArray(r.menus) ? r.menus : [],
+    createdAt: r.createdAt || Date.now(),
+    thankYouSent: !!r.thankYouSent
+  };
+}
+
+function sanitizeBiz (biz) {
+  return {
+    name: biz?.name || 'Usaha Saya',
+    type: biz?.type || 'restoran'
+  };
+}
+
+/* ============================================================
+8. STORAGE WRAPPER (DEFENSIVE)
+============================================================ */
+
+function safeGet (key, fallback) {
+  try {
+    return DB.get(key, fallback);
+  } catch (e) {
+    console.warn('DB.get gagal:', key);
+    return fallback;
+  }
+}
+
+function safeSet (key, value) {
+  try {
+    DB.set(key, value);
+  } catch (e) {
+    console.error('DB.set gagal:', key, e);
+  }
+}
+
+/* ============================================================
+9. UTIL
+============================================================ */
+
+function structuredCloneSafe (obj) {
+  try {
+    return structuredClone(obj);
+  } catch (e) {
+    return JSON.parse(JSON.stringify(obj));
+  }
+}
+
+/* ============================================================
+10. DEV GUARD
+============================================================ */
+
 (function () {
   try {
     if (!window.DB || !window.KEYS) {
-      console.warn('[Proserva] storage.js belum dimuat sebelum state.js');
+      console.warn('[Proserva] storage.js belum siap');
     }
+
+    if (!window.state) {
+      console.warn('[Proserva] state tidak terdefinisi');
+    }
+
   } catch (e) {
     console.error('[Proserva] State init error:', e);
   }

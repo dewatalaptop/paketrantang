@@ -1,8 +1,8 @@
 'use strict';
 
 /* ============================================================
-APP.CONTROLLER.JS — PROSERVA CORE (FIXED + HARDENED)
-Fix Wizard Validation + Stability Upgrade
+APP.CONTROLLER.JS — PROSERVA CORE (PATCHED)
+Fix Wizard Step 2 (Tambah Lokasi)
 ============================================================ */
 
 const App = (function () {
@@ -117,7 +117,6 @@ const App = (function () {
   ============================================================ */
 
   const Router = {
-
     show (name) {
 
       hideAllViews();
@@ -213,43 +212,103 @@ const App = (function () {
 
 
   /* ============================================================
-  7. WIZARD (🔥 FIX UTAMA DI SINI)
+  7. WIZARD (FIXED)
   ============================================================ */
 
   function initWizard () {
 
     const inputName = $('wz-biz-name');
 
-    // === VALIDASI REALTIME ===
+    // STEP 1 VALIDATION
     inputName?.addEventListener('input', () => {
       if (inputName.value.trim()) {
         inputName.classList.remove('error');
       }
     });
 
-    // === STEP 1 VALIDATION (FIX BUG) ===
     $('btn-wizard-next-1')?.addEventListener('click', () => {
-
       const name = inputName?.value?.trim();
 
       if (!name) {
         inputName.classList.add('error');
-        inputName.placeholder = 'Nama usaha wajib diisi';
         inputName.focus();
         return;
       }
 
       goStep(2);
+      renderWizardLocations(); // 🔥 render awal
     });
 
-    // === STEP 2 ===
-    $('btn-wizard-next-2')?.addEventListener('click', () => goStep(3));
+    // 🔥 FIX: ADD LOCATION
+    $('btn-add-location')?.addEventListener('click', () => {
 
+      const name = $('wz-loc-name')?.value?.trim();
+      const cap  = parseInt($('wz-loc-cap')?.value, 10);
+
+      if (!name) {
+        alert('Nama lokasi wajib');
+        return;
+      }
+
+      if (!cap || cap < 1) {
+        alert('Kapasitas minimal 1');
+        return;
+      }
+
+      state.locations = state.locations || [];
+
+      state.locations.push({
+        id: genId?.(),
+        name,
+        capacity: cap
+      });
+
+      $('wz-loc-name').value = '';
+      $('wz-loc-cap').value  = '';
+
+      renderWizardLocations();
+    });
+
+    $('btn-wizard-next-2')?.addEventListener('click', () => goStep(3));
     $('btn-wizard-back-1')?.addEventListener('click', () => goStep(1));
     $('btn-wizard-back-2')?.addEventListener('click', () => goStep(2));
-
     $('btn-wizard-finish')?.addEventListener('click', finishSetup);
   }
+
+
+  function renderWizardLocations () {
+
+    const container = $('wz-locations-list');
+    if (!container) return;
+
+    container.innerHTML = '';
+
+    if (!state.locations || state.locations.length === 0) {
+      container.innerHTML = `<div class="empty">Belum ada lokasi</div>`;
+      return;
+    }
+
+    state.locations.forEach(loc => {
+
+      const div = document.createElement('div');
+      div.className = 'wz-item';
+
+      div.innerHTML = `
+        <span>${loc.name} (${loc.capacity})</span>
+        <button onclick="removeWizardLocation('${loc.id}')">
+          <i class="fas fa-trash"></i>
+        </button>
+      `;
+
+      container.appendChild(div);
+    });
+  }
+
+  window.removeWizardLocation = function (id) {
+    state.locations = (state.locations || []).filter(l => l.id !== id);
+    renderWizardLocations();
+  };
+
 
   function goStep (step) {
     document.querySelectorAll('.wizard-step')
@@ -258,11 +317,11 @@ const App = (function () {
     $('wizard-' + step)?.classList.add('active');
   }
 
+
   function finishSetup () {
 
     const name = $('wz-biz-name')?.value?.trim();
 
-    // 🔥 DOUBLE SAFETY
     if (!name || name.length < 2) {
       alert('Nama usaha minimal 2 karakter');
       return;

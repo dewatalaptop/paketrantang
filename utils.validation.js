@@ -1,155 +1,129 @@
 'use strict';
 
 /* ============================================================
-UTILS.VALIDATION.JS — PROSERVA CORE (REWRITE)
-Robust • Safe • Reusable
+UTILS.VALIDATION.JS — PROSERVA CORE (CLEAN VERSION)
+Validation + Normalization (NO UI SIDE EFFECT)
 ============================================================ */
 
 /* ============================================================
-1. PHONE VALIDATION (IMPROVED)
+1. PHONE VALIDATION
 ============================================================ */
 
 /**
- * Clean digits only
+ * Validate phone number (10–13 digit)
  */
-function extractDigits (raw) {
-  if (!raw) return '';
-  return String(raw).replace(/\D/g, '');
+function validatePhone (raw) {
+  if (!raw) return false;
+
+  var digits = String(raw).replace(/\D/g, '');
+
+  return digits.length >= 10 && digits.length <= 13;
 }
 
 /**
  * Normalize phone:
  * 08xxx → 628xxx
- * +628xxx → 628xxx
  */
 function normalizePhone (raw) {
-  let digits = extractDigits(raw);
+  if (!raw) return '';
 
-  if (!digits) return '';
+  var digits = String(raw).replace(/\D/g, '');
 
-  // remove leading +
   if (digits.startsWith('0')) {
-    digits = '62' + digits.slice(1);
+    return '62' + digits.slice(1);
   }
 
-  // handle 8xxx (missing 0)
-  if (digits.startsWith('8')) {
-    digits = '62' + digits;
+  if (digits.startsWith('62')) {
+    return digits;
   }
 
   return digits;
 }
 
-/**
- * Validate Indonesian phone
- */
-function validatePhone (raw) {
-  const phone = normalizePhone(raw);
-
-  // must start with 62
-  if (!phone.startsWith('62')) return false;
-
-  // typical length 10–14
-  if (phone.length < 10 || phone.length > 14) return false;
-
-  return true;
-}
-
 /* ============================================================
-2. STRING VALIDATION
+2. GENERIC VALIDATORS
 ============================================================ */
 
 /**
- * Required check
+ * Required field
  */
 function isRequired (val) {
-  return val !== null && val !== undefined && String(val).trim() !== '';
+  return val !== null &&
+         val !== undefined &&
+         String(val).trim() !== '';
 }
 
 /**
- * Safe string (basic sanitize)
+ * Minimum number
  */
-function sanitizeText (val, maxLen) {
-  if (!val) return '';
+function minValue (val, min) {
+  var n = parseInt(val, 10);
+  return !isNaN(n) && n >= min;
+}
 
-  let str = String(val).trim();
+/**
+ * Safe integer parse
+ */
+function toInt (val, fallback) {
+  var n = parseInt(val, 10);
+  return isNaN(n) ? (fallback || 0) : n;
+}
 
-  // remove excessive spaces
-  str = str.replace(/\s+/g, ' ');
+/**
+ * Trim string safely
+ */
+function cleanString (val) {
+  return (val || '').toString().trim();
+}
 
-  if (maxLen && str.length > maxLen) {
-    str = str.slice(0, maxLen);
+/* ============================================================
+3. COMPOSITE VALIDATION (OPTIONAL USE)
+============================================================ */
+
+/**
+ * Validate reservation basic fields (no UI)
+ * Return: { valid: boolean, errors: {} }
+ */
+function validateReservationBasic (data) {
+
+  var errors = {};
+
+  if (!isRequired(data.nama)) {
+    errors.nama = 'Nama wajib';
   }
 
-  return str;
+  if (!isRequired(data.jam)) {
+    errors.jam = 'Jam wajib';
+  }
+
+  if (!minValue(data.jumlah, 1)) {
+    errors.jumlah = 'Minimal 1 orang';
+  }
+
+  if (!isRequired(data.tempat)) {
+    errors.tempat = 'Pilih lokasi';
+  }
+
+  if (data.nomorHp && !validatePhone(data.nomorHp)) {
+    errors.nomorHp = 'Nomor tidak valid';
+  }
+
+  return {
+    valid: Object.keys(errors).length === 0,
+    errors: errors
+  };
 }
 
 /* ============================================================
-3. NUMBER VALIDATION
-============================================================ */
-
-function toInt (val, fallback = 0) {
-  const n = parseInt(val, 10);
-  return isNaN(n) ? fallback : n;
-}
-
-function minValue (val, min) {
-  const n = toInt(val, null);
-  return n !== null && n >= min;
-}
-
-/* ============================================================
-4. GENERIC FIELD VALIDATOR (NEW)
-============================================================ */
-
-/**
- * Validate object fields with rules
- * Example:
- * validateFields(data, {
- *   nama: { required: true },
- *   hp: { phone: true },
- *   jumlah: { min: 1 }
- * })
- */
-function validateFields (data, rules) {
-  const errors = {};
-
-  Object.keys(rules).forEach(key => {
-    const val = data[key];
-    const rule = rules[key];
-
-    // required
-    if (rule.required && !isRequired(val)) {
-      errors[key] = 'Wajib diisi';
-      return;
-    }
-
-    // phone
-    if (rule.phone && val && !validatePhone(val)) {
-      errors[key] = 'Nomor tidak valid';
-      return;
-    }
-
-    // min number
-    if (rule.min !== undefined && !minValue(val, rule.min)) {
-      errors[key] = `Minimal ${rule.min}`;
-      return;
-    }
-  });
-
-  return errors;
-}
-
-/* ============================================================
-5. DEV GUARD
+4. DEV GUARD
 ============================================================ */
 
 (function () {
   try {
-    if (!window.validatePhone) {
-      console.warn('[Proserva] validation utils gagal load');
+    if (!window.normalizePhone) {
+      console.warn('[Proserva] utils.validation.js gagal load');
     }
   } catch (e) {
-    console.error('[Proserva] Validation error:', e);
+    console.error('[Proserva] Validation utils error:', e);
   }
 })();

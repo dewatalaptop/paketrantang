@@ -1,14 +1,14 @@
 'use strict';
 
 /* ============================================================
-APP.CONTROLLER.JS — PROSERVA CORE (REWRITE)
-Stable, Defensive, Modular
+APP.CONTROLLER.JS — PROSERVA CORE (FINAL CLEAN)
+Calendar decoupled
 ============================================================ */
 
 const App = (function () {
 
   /* ============================================================
-  1. BOOTSTRAP
+  1. BOOT
   ============================================================ */
 
   function boot () {
@@ -63,6 +63,7 @@ const App = (function () {
       loadStateSafe();
 
       renderHeader();
+
       Router.show('calendar');
 
       NOTIFICATION?.start?.();
@@ -100,7 +101,7 @@ const App = (function () {
 
 
   /* ============================================================
-  4. ROUTER (CLEAN)
+  4. ROUTER
   ============================================================ */
 
   const Router = {
@@ -135,7 +136,7 @@ const App = (function () {
 
 
   /* ============================================================
-  5. VIEW HANDLER
+  5. VIEW HANDLER (CLEAN SWITCH)
   ============================================================ */
 
   function handleViewInit (name) {
@@ -143,7 +144,11 @@ const App = (function () {
     switch (name) {
 
       case 'calendar':
-        renderCalendarSafe();
+        Calendar?.render?.();
+        break;
+
+      case 'detail':
+        // handled by selectDate
         break;
 
       case 'menus':
@@ -169,17 +174,9 @@ const App = (function () {
     }
   }
 
-  function renderCalendarSafe () {
-    try {
-      renderCalendar?.();
-    } catch (e) {
-      console.error('Calendar render error', e);
-    }
-  }
-
 
   /* ============================================================
-  6. CALENDAR FLOW
+  6. CALENDAR FLOW (DELEGATED)
   ============================================================ */
 
   function selectDate (dateStr) {
@@ -187,7 +184,9 @@ const App = (function () {
 
     state.selectedDate = dateStr;
 
-    setTextSafe('detail-title', formatDateDisplay?.(dateStr) || dateStr);
+    setTextSafe('detail-title',
+      formatDateDisplay?.(dateStr) || dateStr
+    );
 
     Router.show('detail');
 
@@ -207,7 +206,7 @@ const App = (function () {
 
 
   /* ============================================================
-  7. RESERVATION FLOW (IMPROVED)
+  7. RESERVATION FLOW
   ============================================================ */
 
   function saveReservation () {
@@ -289,10 +288,12 @@ const App = (function () {
   }
 
   function refreshAfterReservationChange () {
-    renderCalendarSafe();
+    Calendar?.render?.();
 
     if (state.selectedDate) {
-      renderDetailList?.(getResForDate?.(state.selectedDate) || []);
+      renderDetailList?.(
+        getResForDate?.(state.selectedDate) || []
+      );
     }
   }
 
@@ -356,7 +357,7 @@ const App = (function () {
 
 
   /* ============================================================
-  EXPORT (IMPORTANT)
+  EXPORT
   ============================================================ */
 
   return {
@@ -373,7 +374,7 @@ const App = (function () {
 
 
 /* ============================================================
-GLOBAL BINDING (for HTML inline handlers)
+GLOBAL BINDING
 ============================================================ */
 
 window.showView = App.showView;

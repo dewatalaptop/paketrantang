@@ -15,7 +15,7 @@ const App = (function () {
 
       document.body.classList.add('has-banner');
 
-      TRIAL?.checkAndEnforce?.();
+      window.TRIAL?.checkAndEnforce?.();
 
       const isSetup = DB?.get?.(KEYS.SETUP_DONE);
 
@@ -25,7 +25,7 @@ const App = (function () {
 
       if (isSetup) initApp();
 
-      TRIAL?.startTicker?.();
+      window.TRIAL?.startTicker?.();
 
     } catch (err) {
       console.error('[BOOT ERROR]', err);

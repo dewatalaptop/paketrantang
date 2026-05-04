@@ -1,117 +1,155 @@
 'use strict';
 
 /* ============================================================
-UTILS.VALIDATION.JS — PROSERVA CORE
-Form Validation + Input Normalization
+UTILS.VALIDATION.JS — PROSERVA CORE (REWRITE)
+Robust • Safe • Reusable
 ============================================================ */
 
 /* ============================================================
-1. PHONE VALIDATION
+1. PHONE VALIDATION (IMPROVED)
 ============================================================ */
 
 /**
- * Validate phone number (10–13 digit)
+ * Clean digits only
  */
-function validatePhone (raw) {
-  if (!raw) return false;
-
-  var digits = String(raw).replace(/\D/g, '');
-
-  return digits.length >= 10 && digits.length <= 13;
+function extractDigits (raw) {
+  if (!raw) return '';
+  return String(raw).replace(/\D/g, '');
 }
 
 /**
  * Normalize phone:
  * 08xxx → 628xxx
+ * +628xxx → 628xxx
  */
 function normalizePhone (raw) {
-  if (!raw) return '';
+  let digits = extractDigits(raw);
 
-  var digits = String(raw).replace(/\D/g, '');
+  if (!digits) return '';
 
+  // remove leading +
   if (digits.startsWith('0')) {
-    return '62' + digits.slice(1);
+    digits = '62' + digits.slice(1);
   }
 
-  if (digits.startsWith('62')) {
-    return digits;
+  // handle 8xxx (missing 0)
+  if (digits.startsWith('8')) {
+    digits = '62' + digits;
   }
 
   return digits;
 }
 
-/* ============================================================
-2. FIELD ERROR HANDLING
-============================================================ */
-
 /**
- * Show error message for field
- * Convention:
- * - error id: err-xxx
- * - input id: res-xxx
+ * Validate Indonesian phone
  */
-function showFieldError (errorElId, message) {
-  var el = document.getElementById(errorElId);
-  if (!el) return;
+function validatePhone (raw) {
+  const phone = normalizePhone(raw);
 
-  el.textContent = message;
-  el.classList.add('show');
+  // must start with 62
+  if (!phone.startsWith('62')) return false;
 
-  // highlight input
-  var inputId = errorElId.replace(/^err-/, 'res-');
-  var input   = document.getElementById(inputId);
+  // typical length 10–14
+  if (phone.length < 10 || phone.length > 14) return false;
 
-  if (input) {
-    input.classList.add('error');
-  }
-}
-
-/**
- * Clear all form errors
- */
-function clearFormErrors () {
-  // clear messages
-  document.querySelectorAll('.form-error').forEach(function (el) {
-    el.textContent = '';
-    el.classList.remove('show');
-  });
-
-  // remove error styles
-  document
-    .querySelectorAll('.form-input.error, .form-select.error')
-    .forEach(function (el) {
-      el.classList.remove('error');
-    });
+  return true;
 }
 
 /* ============================================================
-3. GENERIC REQUIRED VALIDATION
+2. STRING VALIDATION
 ============================================================ */
 
 /**
- * Validate required field
+ * Required check
  */
 function isRequired (val) {
   return val !== null && val !== undefined && String(val).trim() !== '';
 }
 
 /**
- * Validate number min
+ * Safe string (basic sanitize)
  */
-function minValue (val, min) {
-  var n = parseInt(val, 10);
-  return !isNaN(n) && n >= min;
+function sanitizeText (val, maxLen) {
+  if (!val) return '';
+
+  let str = String(val).trim();
+
+  // remove excessive spaces
+  str = str.replace(/\s+/g, ' ');
+
+  if (maxLen && str.length > maxLen) {
+    str = str.slice(0, maxLen);
+  }
+
+  return str;
 }
 
 /* ============================================================
-4. DEV GUARD
+3. NUMBER VALIDATION
 ============================================================ */
+
+function toInt (val, fallback = 0) {
+  const n = parseInt(val, 10);
+  return isNaN(n) ? fallback : n;
+}
+
+function minValue (val, min) {
+  const n = toInt(val, null);
+  return n !== null && n >= min;
+}
+
+/* ============================================================
+4. GENERIC FIELD VALIDATOR (NEW)
+============================================================ */
+
+/**
+ * Validate object fields with rules
+ * Example:
+ * validateFields(data, {
+ *   nama: { required: true },
+ *   hp: { phone: true },
+ *   jumlah: { min: 1 }
+ * })
+ */
+function validateFields (data, rules) {
+  const errors = {};
+
+  Object.keys(rules).forEach(key => {
+    const val = data[key];
+    const rule = rules[key];
+
+    // required
+    if (rule.required && !isRequired(val)) {
+      errors[key] = 'Wajib diisi';
+      return;
+    }
+
+    // phone
+    if (rule.phone && val && !validatePhone(val)) {
+      errors[key] = 'Nomor tidak valid';
+      return;
+    }
+
+    // min number
+    if (rule.min !== undefined && !minValue(val, rule.min)) {
+      errors[key] = `Minimal ${rule.min}`;
+      return;
+    }
+  });
+
+  return errors;
+}
+
+/* ============================================================
+5. DEV GUARD
+============================================================ */
+
 (function () {
   try {
     if (!window.validatePhone) {
-      console.warn('[Proserva] utils.validation.js gagal load');
+      console.warn('[Proserva] validation utils gagal load');
     }
   } catch (e) {
-    console.error('[Proserva] Validation utils error:', e);
+    console.error('[Proserva] Validation error:', e);
   }
 })();

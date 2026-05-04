@@ -181,9 +181,8 @@ const App = (function () {
   break;
 
       case 'analysis':
-        setupAnalysisSelectors?.();
-        runAnalysis?.();
-        break;
+  Analysis?.init?.();
+  break;
 
       case 'broadcast':
         loadBroadcastView?.();

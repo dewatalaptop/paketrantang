@@ -1,67 +1,67 @@
 'use strict';
 
 /* ============================================================
-RESERVATION.DATA.JS — PROSERVA CORE
-Reservation Data Layer (CRUD + Query)
+RESERVATION.DATA.JS — PROSERVA CORE (REWRITE)
+Safe • Scalable • Business-ready
 ============================================================ */
 
 /* ============================================================
-1. MONTH KEY HELPER
-Format: 2025-04
+1. INIT SAFETY
 ============================================================ */
+
+function ensureState () {
+  if (!window.state) window.state = {};
+  if (!state.reservations) state.reservations = {};
+}
+
+/* ============================================================
+2. MONTH KEY
+============================================================ */
+
 function getMonthKey (year, monthIdx) {
   return year + '-' + String(monthIdx + 1).padStart(2, '0');
 }
 
+function getMonthKeyFromDate (dateStr) {
+  return dateStr?.substring(0, 7);
+}
+
 /* ============================================================
-2. GETTERS
+3. GETTERS
 ============================================================ */
 
-/**
- * Get all reservations for a month
- */
 function getResForMonth (year, monthIdx) {
-  var key = getMonthKey(year, monthIdx);
+  ensureState();
+
+  const key = getMonthKey(year, monthIdx);
   return state.reservations[key] || [];
 }
 
-/**
- * Get all reservations for a specific date
- * dateStr: YYYY-MM-DD
- */
 function getResForDate (dateStr) {
+  ensureState();
   if (!dateStr) return [];
 
-  var mk = dateStr.substring(0, 7);
+  const mk = getMonthKeyFromDate(dateStr);
+  const arr = state.reservations[mk] || [];
 
-  var arr = state.reservations[mk] || [];
-
-  return arr.filter(function (r) {
-    return r.date === dateStr;
-  });
+  return arr
+    .filter(r => r.date === dateStr)
+    .sort((a, b) => (a.jam || '').localeCompare(b.jam || ''));
 }
 
-/**
- * Get all reservations (flatten)
- */
 function getAllReservations () {
-  return Object.values(state.reservations || {})
-    .reduce(function (acc, arr) {
-      return acc.concat(arr);
-    }, []);
+  ensureState();
+
+  return Object.values(state.reservations)
+    .flat()
+    .sort((a, b) => (a.date + a.jam).localeCompare(b.date + b.jam));
 }
 
-/**
- * Find reservation by ID
- */
 function findReservationById (id) {
   if (!id) return null;
 
-  for (var mk in state.reservations) {
-    var found = state.reservations[mk].find(function (r) {
-      return r.id === id;
-    });
-
+  for (const mk in state.reservations) {
+    const found = state.reservations[mk]?.find(r => r.id === id);
     if (found) return found;
   }
 
@@ -69,81 +69,146 @@ function findReservationById (id) {
 }
 
 /* ============================================================
-3. CREATE
+4. VALIDATION ENGINE
 ============================================================ */
 
 /**
- * Add new reservation
+ * Check kapasitas lokasi
  */
+function isCapacityExceeded (res) {
+  if (!res?.tempat || !res?.jumlah) return false;
+
+  const loc = state.locations?.find(l => l.name === res.tempat);
+  if (!loc) return false;
+
+  return res.jumlah > loc.capacity;
+}
+
+/**
+ * Check bentrok waktu (simple rule)
+ * → lokasi sama + jam sama + tanggal sama
+ */
+function isTimeConflict (res, ignoreId) {
+  const list = getResForDate(res.date);
+
+  return list.some(r =>
+    r.id !== ignoreId &&
+    r.tempat === res.tempat &&
+    r.jam === res.jam
+  );
+}
+
+/**
+ * Validate sebelum save
+ */
+function validateReservationBusiness (res, ignoreId) {
+
+  if (isCapacityExceeded(res)) {
+    showToast?.('Melebihi kapasitas lokasi', 'error');
+    return false;
+  }
+
+  if (isTimeConflict(res, ignoreId)) {
+    showToast?.('Slot waktu sudah terisi', 'error');
+    return false;
+  }
+
+  return true;
+}
+
+/* ============================================================
+5. CREATE
+============================================================ */
+
 function addReservation (res) {
+  ensureState();
+
   if (!res || !res.date) return false;
 
-  var mk = res.date.substring(0, 7);
+  if (!validateReservationBusiness(res)) return false;
+
+  const mk = getMonthKeyFromDate(res.date);
 
   if (!state.reservations[mk]) {
     state.reservations[mk] = [];
   }
 
-  state.reservations[mk].push(res);
+  state.reservations[mk].push(normalizeReservation(res));
 
-  saveReservations();
+  persist();
+
   return true;
 }
 
 /* ============================================================
-4. UPDATE
+6. UPDATE (FIXED: SUPPORT MOVE MONTH)
 ============================================================ */
 
-/**
- * Update reservation (by id)
- */
 function updateReservation (res) {
-  if (!res || !res.id || !res.date) return false;
+  ensureState();
 
-  var mk = res.date.substring(0, 7);
-  var arr = state.reservations[mk];
+  if (!res?.id || !res?.date) return false;
 
-  if (!arr) return false;
+  if (!validateReservationBusiness(res, res.id)) return false;
 
-  var idx = arr.findIndex(function (r) {
-    return r.id === res.id;
-  });
+  // cari di semua bulan (karena bisa pindah tanggal)
+  let oldMk = null;
+  let idx = -1;
 
-  if (idx === -1) return false;
+  for (const mk in state.reservations) {
+    const i = state.reservations[mk].findIndex(r => r.id === res.id);
+    if (i !== -1) {
+      oldMk = mk;
+      idx = i;
+      break;
+    }
+  }
 
-  arr[idx] = res;
+  if (oldMk === null) return false;
 
-  saveReservations();
+  // hapus dari lama
+  state.reservations[oldMk].splice(idx, 1);
+
+  if (state.reservations[oldMk].length === 0) {
+    delete state.reservations[oldMk];
+  }
+
+  // tambah ke bulan baru
+  const newMk = getMonthKeyFromDate(res.date);
+
+  if (!state.reservations[newMk]) {
+    state.reservations[newMk] = [];
+  }
+
+  state.reservations[newMk].push(normalizeReservation(res));
+
+  persist();
+
   return true;
 }
 
 /* ============================================================
-5. DELETE
+7. DELETE
 ============================================================ */
 
-/**
- * Delete reservation by ID
- */
 function deleteReservation (id) {
+  ensureState();
   if (!id) return false;
 
-  for (var mk in state.reservations) {
+  for (const mk in state.reservations) {
 
-    var arr = state.reservations[mk];
-
-    var idx = arr.findIndex(function (r) {
-      return r.id === id;
-    });
+    const arr = state.reservations[mk];
+    const idx = arr.findIndex(r => r.id === id);
 
     if (idx !== -1) {
+
       arr.splice(idx, 1);
 
-      // cleanup empty month bucket
       if (arr.length === 0) {
         delete state.reservations[mk];
       }
 
-      saveReservations();
+      persist();
       return true;
     }
   }
@@ -152,14 +217,53 @@ function deleteReservation (id) {
 }
 
 /* ============================================================
-6. SAFE GUARD
+8. NORMALIZER
 ============================================================ */
+
+function normalizeReservation (r) {
+  return {
+    id: r.id,
+    date: r.date,
+    nama: r.nama || '',
+    nomorHp: r.nomorHp || '',
+    jam: r.jam || '',
+    jumlah: Number(r.jumlah) || 1,
+    tempat: r.tempat || '',
+    dp: Number(r.dp) || 0,
+    tipeDp: r.tipeDp || '',
+    tambahan: r.tambahan || '',
+    menus: Array.isArray(r.menus) ? r.menus : [],
+    createdAt: r.createdAt || Date.now(),
+    thankYouSent: !!r.thankYouSent
+  };
+}
+
+/* ============================================================
+9. PERSISTENCE (SAFE)
+============================================================ */
+
+function persist () {
+  try {
+    saveReservations?.();
+  } catch (e) {
+    console.error('Save error', e);
+    showToast?.('Gagal menyimpan data', 'error');
+  }
+}
+
+/* ============================================================
+10. SAFE GUARD
+============================================================ */
+
 (function () {
   try {
+    ensureState();
+
     if (!window.state) {
-      console.warn('[Proserva] state belum tersedia sebelum reservation.data.js');
+      console.warn('[Proserva] state tidak tersedia');
     }
+
   } catch (e) {
-    console.error('[Proserva] Reservation data init error:', e);
+    console.error('[Proserva] Reservation init error:', e);
   }
 })();

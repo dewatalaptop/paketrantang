@@ -1,8 +1,8 @@
 'use strict';
 
 /* ============================================================
-APP.CONTROLLER.JS — PROSERVA CORE (FINAL CLEAN)
-Calendar decoupled
+APP.CONTROLLER.JS — PROSERVA CORE (STABLE FINAL)
+Modular • Defensive • Production Ready
 ============================================================ */
 
 const App = (function () {
@@ -24,9 +24,9 @@ const App = (function () {
 
       toggleSetup(!isSetup);
 
-      if (isSetup) initApp();
-
       initGlobalUI();
+
+      if (isSetup) initApp();
 
       if (window.TRIAL?.startTicker) {
         TRIAL.startTicker();
@@ -66,6 +66,10 @@ const App = (function () {
 
       Router.show('calendar');
 
+      if (!window.Calendar) {
+        console.warn('[Calendar] belum terload');
+      }
+
       NOTIFICATION?.start?.();
 
     } catch (err) {
@@ -76,9 +80,23 @@ const App = (function () {
   function loadStateSafe () {
     try {
       loadState?.();
+
+      if (!window.state) window.state = {};
+
+      state.biz = state.biz || { name: 'Usaha Saya', type: 'restoran' };
+      state.menus = state.menus || [];
+      state.locations = state.locations || [];
+      state.reservations = state.reservations || {};
+
     } catch (e) {
-      console.warn('State gagal load, reset...');
-      window.state = {};
+      console.warn('State fallback digunakan');
+
+      window.state = {
+        biz: { name: 'Usaha Saya', type: 'restoran' },
+        menus: [],
+        locations: [],
+        reservations: {}
+      };
     }
   }
 
@@ -136,7 +154,7 @@ const App = (function () {
 
 
   /* ============================================================
-  5. VIEW HANDLER (CLEAN SWITCH)
+  5. VIEW HANDLER
   ============================================================ */
 
   function handleViewInit (name) {
@@ -148,7 +166,6 @@ const App = (function () {
         break;
 
       case 'detail':
-        // handled by selectDate
         break;
 
       case 'menus':
@@ -176,7 +193,7 @@ const App = (function () {
 
 
   /* ============================================================
-  6. CALENDAR FLOW (DELEGATED)
+  6. CALENDAR FLOW
   ============================================================ */
 
   function selectDate (dateStr) {
@@ -220,12 +237,9 @@ const App = (function () {
     try {
 
       if (data.id) {
-
         updateReservation?.(data);
         showToast('Reservasi diperbarui');
-
       } else {
-
         data.id = genId?.();
         data.createdAt = Date.now();
         data.thankYouSent = false;
@@ -239,7 +253,7 @@ const App = (function () {
       refreshAfterReservationChange();
 
     } catch (err) {
-      console.error('Save reservation error', err);
+      console.error('Save error', err);
       showToast('Gagal menyimpan data', 'error');
     }
   }
@@ -299,55 +313,94 @@ const App = (function () {
 
 
   /* ============================================================
-  8. WHATSAPP
+  8. WIZARD
   ============================================================ */
 
-  function sendConfirmationHandler (id) {
-    if (!sendConfirmation?.(id)) {
-      showToast('Nomor tidak tersedia', 'error');
-    }
+  function initWizard () {
+
+    $('btn-wizard-next-1')?.addEventListener('click', () => goStep(2));
+    $('btn-wizard-next-2')?.addEventListener('click', () => goStep(3));
+
+    $('btn-wizard-back-1')?.addEventListener('click', () => goStep(1));
+    $('btn-wizard-back-2')?.addEventListener('click', () => goStep(2));
+
+    $('btn-wizard-finish')?.addEventListener('click', finishSetup);
   }
 
-  function sendThankYouHandler (id) {
-    if (!sendThankYou?.(id)) {
-      showToast('Gagal kirim', 'error');
-    } else {
-      showToast('Ucapan terkirim 🎉');
+  function goStep (step) {
+    document.querySelectorAll('.wizard-step')
+      .forEach(el => el.classList.remove('active'));
+
+    $('wizard-' + step)?.classList.add('active');
+  }
+
+  function finishSetup () {
+
+    const name = $('wz-biz-name')?.value?.trim();
+
+    if (!name) {
+      alert('Nama usaha wajib diisi');
+      return;
     }
+
+    state.biz = {
+      name: name,
+      type: $('wz-biz-type')?.value || 'restoran'
+    };
+
+    state.locations = state.locations || [];
+    state.menus = state.menus || [];
+
+    saveBiz?.();
+    saveLocations?.();
+    saveMenus?.();
+
+    DB.set(KEYS.SETUP_DONE, true);
+
+    location.reload();
   }
 
 
   /* ============================================================
-  9. DELETE
+  9. NAV + TOPBAR
   ============================================================ */
 
-  function deleteReservationHandler (id) {
+  function initNav () {
+    document.querySelectorAll('.nav-item').forEach(el => {
+      el.addEventListener('click', () => {
+        const view = el.dataset.view;
+        if (view) Router.show(view);
+      });
+    });
+  }
 
-    if (!confirmAction?.('Hapus reservasi ini?')) return;
+  function initTopbar () {
 
-    try {
-      deleteReservation?.(id);
-      showToast('Reservasi dihapus', 'info');
-      refreshAfterReservationChange();
-    } catch (e) {
-      console.error('Delete error', e);
-    }
+    $('btn-add-res')?.addEventListener('click', () => {
+      openModal?.('modal-reservation');
+    });
+
+    $('btn-sidebar-toggle')?.addEventListener('click', toggleSidebar);
   }
 
 
   /* ============================================================
-  10. GLOBAL UI INIT
+  10. GLOBAL INIT
   ============================================================ */
 
   function initGlobalUI () {
     initModalOverlayClose?.();
     initKeyboardShortcuts?.();
     initSidebarOverlay?.();
+
+    initWizard();
+    initNav();
+    initTopbar();
   }
 
 
   /* ============================================================
-  11. SAFE HELPERS
+  11. HELPERS
   ============================================================ */
 
   function setTextSafe (id, val) {
@@ -364,10 +417,7 @@ const App = (function () {
     showView: Router.show,
     selectDate,
     backToCalendar,
-    saveReservation,
-    deleteReservation: deleteReservationHandler,
-    sendConfirmation: sendConfirmationHandler,
-    sendThankYou: sendThankYouHandler
+    saveReservation
   };
 
 })();
@@ -381,9 +431,6 @@ window.showView = App.showView;
 window.selectDate = App.selectDate;
 window.backToCalendar = App.backToCalendar;
 window.saveReservation = App.saveReservation;
-window.handleDeleteReservation = App.deleteReservation;
-window.handleSendConfirmation = App.sendConfirmation;
-window.handleSendThankYou = App.sendThankYou;
 
 
 /* ============================================================
@@ -396,6 +443,6 @@ SAFE GUARD
       console.warn('[Proserva] Core belum lengkap');
     }
   } catch (e) {
-    console.error('[Proserva] App controller error:', e);
+    console.error('[Proserva] App error:', e);
   }
 })();

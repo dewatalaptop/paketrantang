@@ -1,13 +1,14 @@
 'use strict';
 
 /* ============================================================
-UTILS.FORMAT.JS — PROSERVA CORE
-Date + Number + Currency Formatting
+UTILS.FORMAT.JS — PROSERVA CORE (STABLE VERSION)
+Date • Time • Currency • Locale-safe
 ============================================================ */
 
 /* ============================================================
 1. CONSTANTS
 ============================================================ */
+
 var MONTHS_ID = [
   'Januari','Februari','Maret','April','Mei','Juni',
   'Juli','Agustus','September','Oktober','November','Desember'
@@ -22,47 +23,76 @@ var DAYS_ID = [
 ];
 
 /* ============================================================
-2. DATE FORMATTING
+2. SAFE DATE PARSER (ANTI TIMEZONE BUG)
+============================================================ */
+
+/**
+ * Parse YYYY-MM-DD safely (no timezone shift)
+ */
+function parseDateLocal (dateStr) {
+  if (!dateStr) return null;
+
+  var p = dateStr.split('-');
+  if (p.length !== 3) return null;
+
+  var y = parseInt(p[0], 10);
+  var m = parseInt(p[1], 10) - 1;
+  var d = parseInt(p[2], 10);
+
+  return new Date(y, m, d);
+}
+
+/* ============================================================
+3. DATE FORMATTERS
 ============================================================ */
 
 /**
  * YYYY-MM-DD → "15 Januari 2025"
  */
 function formatDateDisplay (dateStr) {
-  if (!dateStr) return '—';
+  var d = parseDateLocal(dateStr);
+  if (!d) return dateStr || '—';
 
-  var p = dateStr.split('-');
-  if (p.length !== 3) return dateStr;
-
-  var y = p[0];
-  var m = parseInt(p[1], 10) - 1;
-  var d = parseInt(p[2], 10);
-
-  return d + ' ' + (MONTHS_ID[m] || '') + ' ' + y;
+  return d.getDate() + ' ' +
+         MONTHS_ID[d.getMonth()] + ' ' +
+         d.getFullYear();
 }
 
 /**
  * YYYY-MM-DD → "Senin, 15 Jan 2025"
  */
 function formatDateFull (dateStr) {
-  if (!dateStr) return '—';
+  var d = parseDateLocal(dateStr);
+  if (!d) return dateStr || '—';
 
-  var dObj = new Date(dateStr + 'T12:00:00');
-  var dow  = DAYS_ID[dObj.getDay()];
-
-  var p = dateStr.split('-');
-  var y = p[0];
-  var m = parseInt(p[1], 10) - 1;
-  var d = parseInt(p[2], 10);
-
-  return dow + ', ' + d + ' ' + (MONTHS_SHORT[m] || '') + ' ' + y;
+  return DAYS_ID[d.getDay()] + ', ' +
+         d.getDate() + ' ' +
+         MONTHS_SHORT[d.getMonth()] + ' ' +
+         d.getFullYear();
 }
 
 /**
- * Today → YYYY-MM-DD
+ * Calendar label → "April 2025"
+ */
+function formatMonthYear (year, monthIdx) {
+  return MONTHS_ID[monthIdx] + ' ' + year;
+}
+
+/* ============================================================
+4. DATE GENERATORS (FIXED)
+============================================================ */
+
+/**
+ * Today → YYYY-MM-DD (LOCAL SAFE)
  */
 function todayStr () {
-  return new Date().toISOString().split('T')[0];
+  var now = new Date();
+
+  var y = now.getFullYear();
+  var m = String(now.getMonth() + 1).padStart(2, '0');
+  var d = String(now.getDate()).padStart(2, '0');
+
+  return y + '-' + m + '-' + d;
 }
 
 /**
@@ -74,8 +104,15 @@ function buildDateStr (year, month1based, day) {
     String(day).padStart(2, '0');
 }
 
+/**
+ * Compare date string
+ */
+function isSameDate (a, b) {
+  return a === b;
+}
+
 /* ============================================================
-3. NUMBER / CURRENCY
+5. NUMBER & CURRENCY
 ============================================================ */
 
 /**
@@ -87,7 +124,6 @@ function formatRupiah (n) {
 
 /**
  * 1500000 → "1,5jt"
- * 250000 → "250rb"
  */
 function formatRupiahK (n) {
   n = parseInt(n, 10) || 0;
@@ -106,19 +142,17 @@ function formatRupiahK (n) {
 }
 
 /* ============================================================
-4. SMALL HELPERS
+6. SMALL HELPERS
 ============================================================ */
 
-/**
- * Pad number → 01, 02, ...
- */
 function pad2 (n) {
   return n < 10 ? '0' + n : '' + n;
 }
 
 /* ============================================================
-5. DEV GUARD
+7. DEV GUARD
 ============================================================ */
+
 (function () {
   try {
     if (!window.formatDateDisplay) {

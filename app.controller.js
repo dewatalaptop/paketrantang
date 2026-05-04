@@ -1,8 +1,8 @@
 'use strict';
 
 /* ============================================================
-APP.CONTROLLER.JS — PROSERVA CORE (STABLE FINAL)
-Modular • Defensive • Production Ready
+APP.CONTROLLER.JS — PROSERVA CORE (FIXED + HARDENED)
+Fix Wizard Validation + Stability Upgrade
 ============================================================ */
 
 const App = (function () {
@@ -16,9 +16,7 @@ const App = (function () {
 
       document.body.classList.add('has-banner');
 
-      if (window.TRIAL?.checkAndEnforce) {
-        TRIAL.checkAndEnforce();
-      }
+      TRIAL?.checkAndEnforce?.();
 
       const isSetup = DB?.get?.(KEYS.SETUP_DONE);
 
@@ -28,9 +26,7 @@ const App = (function () {
 
       if (isSetup) initApp();
 
-      if (window.TRIAL?.startTicker) {
-        TRIAL.startTicker();
-      }
+      TRIAL?.startTicker?.();
 
     } catch (err) {
       console.error('[BOOT ERROR]', err);
@@ -61,13 +57,12 @@ const App = (function () {
     try {
 
       loadStateSafe();
-
       renderHeader();
 
       Router.show('calendar');
 
       if (!window.Calendar) {
-        console.warn('[Calendar] belum terload');
+        console.warn('[Calendar] belum load');
       }
 
       NOTIFICATION?.start?.();
@@ -89,8 +84,7 @@ const App = (function () {
       state.reservations = state.reservations || {};
 
     } catch (e) {
-      console.warn('State fallback digunakan');
-
+      console.warn('[STATE FALLBACK]');
       window.state = {
         biz: { name: 'Usaha Saya', type: 'restoran' },
         menus: [],
@@ -165,7 +159,12 @@ const App = (function () {
         Calendar?.render?.();
         break;
 
-      case 'detail':
+      case 'customers':
+        Customers?.render?.();
+        break;
+
+      case 'analysis':
+        Analysis?.init?.();
         break;
 
       case 'menus':
@@ -175,14 +174,6 @@ const App = (function () {
       case 'locations':
         renderLocationsTable?.();
         break;
-
-      case 'customers':
-  Customers?.render?.();
-  break;
-
-      case 'analysis':
-  Analysis?.init?.();
-  break;
 
       case 'broadcast':
         loadBroadcastView?.();
@@ -209,7 +200,7 @@ const App = (function () {
     try {
       renderDetailList?.(getResForDate?.(dateStr) || []);
     } catch (e) {
-      console.error('Detail render error', e);
+      console.error('[DETAIL ERROR]', e);
     }
 
     scrollTopSmooth?.();
@@ -222,102 +213,36 @@ const App = (function () {
 
 
   /* ============================================================
-  7. RESERVATION FLOW
-  ============================================================ */
-
-  function saveReservation () {
-
-    clearFormErrors?.();
-
-    const data = collectReservationForm();
-
-    if (!validateReservationForm(data)) return;
-
-    try {
-
-      if (data.id) {
-        updateReservation?.(data);
-        showToast('Reservasi diperbarui');
-      } else {
-        data.id = genId?.();
-        data.createdAt = Date.now();
-        data.thankYouSent = false;
-
-        addReservation?.(data);
-        showToast('Reservasi ditambahkan 🎉');
-      }
-
-      closeModal?.('modal-reservation');
-
-      refreshAfterReservationChange();
-
-    } catch (err) {
-      console.error('Save error', err);
-      showToast('Gagal menyimpan data', 'error');
-    }
-  }
-
-  function collectReservationForm () {
-    return {
-      id: $('res-edit-id')?.value || null,
-      date: state.selectedDate || todayStr?.(),
-      nama: $('res-nama')?.value?.trim() || '',
-      nomorHp: normalizePhone?.($('res-hp')?.value) || '',
-      jam: $('res-jam')?.value,
-      jumlah: parseInt($('res-jumlah')?.value, 10),
-      tempat: $('res-tempat')?.value,
-      dp: parseInt($('res-dp')?.value, 10) || 0,
-      tipeDp: $('res-tipe-dp')?.value,
-      tambahan: $('res-tambahan')?.value?.trim(),
-      menus: collectMenuRows?.() || []
-    };
-  }
-
-  function validateReservationForm (d) {
-
-    let valid = true;
-
-    if (!d.nama) {
-      showFieldError?.('err-nama', 'Nama wajib');
-      valid = false;
-    }
-
-    if (!d.jam) {
-      showFieldError?.('err-jam', 'Jam wajib');
-      valid = false;
-    }
-
-    if (!d.jumlah || d.jumlah < 1) {
-      showFieldError?.('err-jumlah', 'Minimal 1 orang');
-      valid = false;
-    }
-
-    if (!d.tempat) {
-      showFieldError?.('err-tempat', 'Pilih lokasi');
-      valid = false;
-    }
-
-    return valid;
-  }
-
-  function refreshAfterReservationChange () {
-    Calendar?.render?.();
-
-    if (state.selectedDate) {
-      renderDetailList?.(
-        getResForDate?.(state.selectedDate) || []
-      );
-    }
-  }
-
-
-  /* ============================================================
-  8. WIZARD
+  7. WIZARD (🔥 FIX UTAMA DI SINI)
   ============================================================ */
 
   function initWizard () {
 
-    $('btn-wizard-next-1')?.addEventListener('click', () => goStep(2));
+    const inputName = $('wz-biz-name');
+
+    // === VALIDASI REALTIME ===
+    inputName?.addEventListener('input', () => {
+      if (inputName.value.trim()) {
+        inputName.classList.remove('error');
+      }
+    });
+
+    // === STEP 1 VALIDATION (FIX BUG) ===
+    $('btn-wizard-next-1')?.addEventListener('click', () => {
+
+      const name = inputName?.value?.trim();
+
+      if (!name) {
+        inputName.classList.add('error');
+        inputName.placeholder = 'Nama usaha wajib diisi';
+        inputName.focus();
+        return;
+      }
+
+      goStep(2);
+    });
+
+    // === STEP 2 ===
     $('btn-wizard-next-2')?.addEventListener('click', () => goStep(3));
 
     $('btn-wizard-back-1')?.addEventListener('click', () => goStep(1));
@@ -337,8 +262,9 @@ const App = (function () {
 
     const name = $('wz-biz-name')?.value?.trim();
 
-    if (!name) {
-      alert('Nama usaha wajib diisi');
+    // 🔥 DOUBLE SAFETY
+    if (!name || name.length < 2) {
+      alert('Nama usaha minimal 2 karakter');
       return;
     }
 
@@ -361,7 +287,7 @@ const App = (function () {
 
 
   /* ============================================================
-  9. NAV + TOPBAR
+  8. NAV + TOPBAR
   ============================================================ */
 
   function initNav () {
@@ -374,7 +300,6 @@ const App = (function () {
   }
 
   function initTopbar () {
-
     $('btn-add-res')?.addEventListener('click', () => {
       openModal?.('modal-reservation');
     });
@@ -384,7 +309,7 @@ const App = (function () {
 
 
   /* ============================================================
-  10. GLOBAL INIT
+  9. GLOBAL INIT
   ============================================================ */
 
   function initGlobalUI () {
@@ -399,7 +324,7 @@ const App = (function () {
 
 
   /* ============================================================
-  11. HELPERS
+  10. HELPERS
   ============================================================ */
 
   function setTextSafe (id, val) {
@@ -415,8 +340,7 @@ const App = (function () {
   return {
     showView: Router.show,
     selectDate,
-    backToCalendar,
-    saveReservation
+    backToCalendar
   };
 
 })();
@@ -429,7 +353,6 @@ GLOBAL BINDING
 window.showView = App.showView;
 window.selectDate = App.selectDate;
 window.backToCalendar = App.backToCalendar;
-window.saveReservation = App.saveReservation;
 
 
 /* ============================================================

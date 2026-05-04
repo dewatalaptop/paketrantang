@@ -1,8 +1,8 @@
 'use strict';
 
 /* ============================================================
-UI.HELPERS.JS — PROSERVA CORE (REWRITE)
-Safe • Clean • UX Improved
+UI.HELPERS.JS — PROSERVA CORE (FINAL FIXED)
+Safe • Dropdown Ready • Modal Integrated
 ============================================================ */
 
 /* ============================================================
@@ -23,9 +23,20 @@ function setHTML (id, html) {
   if (el) el.innerHTML = html ?? '';
 }
 
-/**
- * Escape HTML (IMPORTANT for user input)
- */
+/* ============================================================
+2. 🔥 SAFE ARRAY (ANTI CRASH CORE)
+============================================================ */
+
+function safeArray (val) {
+  if (Array.isArray(val)) return val;
+  if (val && typeof val === 'object') return Object.values(val);
+  return [];
+}
+
+/* ============================================================
+3. ESCAPE HTML
+============================================================ */
+
 function escapeHtml (str) {
   if (typeof str !== 'string') return str;
 
@@ -38,7 +49,65 @@ function escapeHtml (str) {
 }
 
 /* ============================================================
-2. MODAL SYSTEM (IMPROVED)
+4. 🔥 DROPDOWN ENGINE (CRITICAL FIX)
+============================================================ */
+
+function renderDropdownOptions () {
+
+  try {
+
+    /* ---------- LOKASI ---------- */
+
+    const locSelect = $('res-tempat');
+
+    if (locSelect) {
+
+      const locations = safeArray(window.state?.locations);
+
+      if (!locations.length) {
+        locSelect.innerHTML = `<option value="">Belum ada lokasi</option>`;
+      } else {
+        locSelect.innerHTML = locations.map(loc =>
+          `<option value="${escapeHtml(loc.name)}">
+            ${escapeHtml(loc.name)} (${loc.capacity || 0})
+          </option>`
+        ).join('');
+      }
+    }
+
+
+    /* ---------- MENU ---------- */
+
+    const menuContainer = $('res-menu-container');
+
+    if (menuContainer) {
+
+      const menus = safeArray(window.state?.menus);
+
+      if (!menus.length) {
+        menuContainer.innerHTML = `
+          <div class="empty">Belum ada menu</div>
+        `;
+      } else {
+
+        menuContainer.innerHTML = menus.map(m => `
+          <div class="menu-item">
+            <label>
+              <input type="checkbox" data-menu-id="${m.id}">
+              ${escapeHtml(m.name)} - Rp${m.price || 0}
+            </label>
+          </div>
+        `).join('');
+      }
+    }
+
+  } catch (e) {
+    console.error('[Dropdown Render Error]', e);
+  }
+}
+
+/* ============================================================
+5. MODAL SYSTEM (🔥 INJECT DROPDOWN)
 ============================================================ */
 
 function openModal (id) {
@@ -46,7 +115,12 @@ function openModal (id) {
   if (!el) return;
 
   el.classList.add('open');
-  document.body.style.overflow = 'hidden'; // lock scroll
+  document.body.style.overflow = 'hidden';
+
+  // 🔥 FIX: inject dropdown saat buka modal
+  if (id === 'modal-reservation') {
+    renderDropdownOptions();
+  }
 }
 
 function closeModal (id) {
@@ -55,15 +129,11 @@ function closeModal (id) {
 
   el.classList.remove('open');
 
-  // unlock scroll only if no modal open
   if (!document.querySelector('.modal-overlay.open')) {
     document.body.style.overflow = '';
   }
 }
 
-/**
- * Close modal when clicking overlay
- */
 function initModalOverlayClose () {
   document.querySelectorAll('.modal-overlay').forEach(overlay => {
     overlay.addEventListener('click', e => {
@@ -75,7 +145,7 @@ function initModalOverlayClose () {
 }
 
 /* ============================================================
-3. TOAST SYSTEM (IMPROVED)
+6. TOAST
 ============================================================ */
 
 const TOAST_ICONS = {
@@ -92,7 +162,6 @@ function showToast (message, type = 'success', duration = 3000) {
   const container = $('toast-container');
   if (!container) return;
 
-  // limit toast
   while (container.children.length >= MAX_TOAST) {
     container.removeChild(container.firstChild);
   }
@@ -109,13 +178,12 @@ function showToast (message, type = 'success', duration = 3000) {
   setTimeout(() => {
     div.style.opacity = '0';
     div.style.transform = 'translateX(20px)';
-
     setTimeout(() => div.remove(), 300);
   }, duration);
 }
 
 /* ============================================================
-4. FORM ERROR HANDLING
+7. FORM ERROR
 ============================================================ */
 
 function showFieldError (id, message) {
@@ -142,7 +210,7 @@ function clearFormErrors () {
 }
 
 /* ============================================================
-5. SIDEBAR
+8. SIDEBAR
 ============================================================ */
 
 function toggleSidebar () {
@@ -167,7 +235,7 @@ function initSidebarOverlay () {
 }
 
 /* ============================================================
-6. KEYBOARD SHORTCUTS
+9. KEYBOARD
 ============================================================ */
 
 function initKeyboardShortcuts () {
@@ -175,73 +243,30 @@ function initKeyboardShortcuts () {
 
     if (e.key === 'Escape') {
 
-      // close modals
       document.querySelectorAll('.modal-overlay.open')
         .forEach(m => m.classList.remove('open'));
 
-      // unlock scroll
       document.body.style.overflow = '';
 
-      // close notif
       $('notif-dropdown')?.classList.remove('open');
     }
   });
 }
 
 /* ============================================================
-7. DROPDOWN (FIXED AUTO CLOSE)
-============================================================ */
-
-function toggleNotifDropdown (e) {
-  e?.stopPropagation?.();
-
-  const nd = $('notif-dropdown');
-  if (!nd) return;
-
-  nd.classList.toggle('open');
-}
-
-// global click handler
-document.addEventListener('click', function (e) {
-  const nd  = $('notif-dropdown');
-  const btn = $('notif-btn');
-
-  if (!nd) return;
-
-  if (nd.contains(e.target)) return;
-  if (btn && btn.contains(e.target)) return;
-
-  nd.classList.remove('open');
-});
-
-/* ============================================================
-8. SMALL HELPERS
+10. SMALL HELPERS
 ============================================================ */
 
 function scrollTopSmooth () {
-  window.scrollTo({
-    top: 0,
-    behavior: 'smooth'
-  });
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function confirmAction (msg) {
   return window.confirm(msg);
 }
 
-/**
- * Debounce helper (future use)
- */
-function debounce (fn, delay = 300) {
-  let t;
-  return function (...args) {
-    clearTimeout(t);
-    t = setTimeout(() => fn.apply(this, args), delay);
-  };
-}
-
 /* ============================================================
-9. SAFE GUARD
+11. SAFE GUARD
 ============================================================ */
 
 (function () {

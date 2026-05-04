@@ -1,259 +1,372 @@
 'use strict';
 
 /* ============================================================
-CALENDAR.UI.JS — PROSERVA CORE (HARDENED)
-Stable • Defensive • Safe binding
+CALENDAR.UI.JS — PROSERVA CORE (PRO CALENDAR ENGINE)
+Heatmap • Smart Indicators • Fast Rendering
 ============================================================ */
 
-(function () {
-
-  console.log('[Calendar] module init');
+window.Calendar = (function () {
 
   /* ============================================================
-  SAFE HELPERS
+  1. MAIN RENDER
   ============================================================ */
 
-  function safe$(id) {
-    return document.getElementById(id);
-  }
-
-  function safeToday() {
-    return window.todayStr ? todayStr() : null;
-  }
-
-  function safeGetRes(dateStr) {
+  function render () {
     try {
-      return window.getResForDate ? getResForDate(dateStr) : [];
-    } catch (e) {
-      console.error('[Calendar] getRes error', e);
-      return [];
-    }
-  }
-
-  function safeBuildDate(y, m, d) {
-    return window.buildDateStr
-      ? buildDateStr(y, m, d)
-      : `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-  }
-
-
-  /* ============================================================
-  CORE
-  ============================================================ */
-
-  const Calendar = {
-
-    render () {
-      try {
-
-        if (!window.state) {
-          console.warn('[Calendar] state not ready');
-          return;
-        }
-
-        // HARDEN state
-        state.currentYear  ??= new Date().getFullYear();
-        state.currentMonth ??= new Date().getMonth();
-
-        this.renderHeader();
-        this.renderGrid();
-
-      } catch (e) {
-        console.error('[Calendar.render]', e);
-      }
-    },
-
-
-    /* ============================================================
-    HEADER
-    ============================================================ */
-
-    renderHeader () {
-      const label = safe$('cal-month-label');
-      if (!label) return;
-
-      try {
-        label.textContent =
-          MONTHS_ID?.[state.currentMonth] + ' ' + state.currentYear;
-      } catch {
-        label.textContent = `${state.currentMonth + 1}/${state.currentYear}`;
-      }
-    },
-
-
-    /* ============================================================
-    NAVIGATION
-    ============================================================ */
-
-    prevMonth () {
-      state.currentMonth--;
-
-      if (state.currentMonth < 0) {
-        state.currentMonth = 11;
-        state.currentYear--;
-      }
-
-      this.render();
-    },
-
-    nextMonth () {
-      state.currentMonth++;
-
-      if (state.currentMonth > 11) {
-        state.currentMonth = 0;
-        state.currentYear++;
-      }
-
-      this.render();
-    },
-
-    goToday () {
-      const now = new Date();
-      state.currentYear  = now.getFullYear();
-      state.currentMonth = now.getMonth();
-      this.render();
-    },
-
-
-    /* ============================================================
-    GRID
-    ============================================================ */
-
-    renderGrid () {
-
-      const grid = safe$('cal-days');
-      if (!grid) return;
-
-      grid.innerHTML = '';
+      if (!window.state) return;
 
       const year  = state.currentYear;
       const month = state.currentMonth;
 
-      const firstDay    = new Date(year, month, 1).getDay();
-      const daysInMonth = new Date(year, month + 1, 0).getDate();
-      const today       = safeToday();
+      renderHeader(year, month);
+      renderGrid(year, month);
+      renderStats(year, month); // 🔥 NEW
 
-      // empty
-      for (let i = 0; i < firstDay; i++) {
-        const div = document.createElement('div');
-        div.className = 'cal-day empty';
-        grid.appendChild(div);
-      }
-
-      // days
-      for (let d = 1; d <= daysInMonth; d++) {
-
-        const dateStr = safeBuildDate(year, month + 1, d);
-        const resList = safeGetRes(dateStr);
-
-        grid.appendChild(
-          this.createDayCell(d, dateStr, resList, today)
-        );
-      }
-    },
-
-
-    /* ============================================================
-    CELL
-    ============================================================ */
-
-    createDayCell (day, dateStr, reservations, today) {
-
-      const div = document.createElement('div');
-      div.className = 'cal-day';
-
-      if (dateStr === today) {
-        div.classList.add('today');
-      }
-
-      div.onclick = () => window.selectDate?.(dateStr);
-
-      const num = document.createElement('div');
-      num.className = 'cal-day-num';
-      num.textContent = day;
-      div.appendChild(num);
-
-      if (reservations.length > 0) {
-
-        const pill = document.createElement('div');
-        pill.className = 'cal-res-pill';
-        pill.innerHTML = `<i class="fas fa-users"></i> ${reservations.length}`;
-        div.appendChild(pill);
-
-        const wrap = document.createElement('div');
-        wrap.className = 'cal-mini-names';
-
-        reservations.slice(0, 3).forEach(r => {
-          const name = document.createElement('div');
-          name.className = 'cal-mini-name';
-          name.textContent = r.nama;
-          wrap.appendChild(name);
-        });
-
-        div.appendChild(wrap);
-      }
-
-      return div;
-    },
-
-
-    /* ============================================================
-    DETAIL
-    ============================================================ */
-
-    renderDetailList (list) {
-
-      const container = safe$('detail-list');
-      if (!container) return;
-
-      container.innerHTML = '';
-
-      if (!list || list.length === 0) {
-        container.innerHTML = `
-          <div class="empty-state">
-            <i class="fas fa-calendar-check"></i>
-            <div>Belum ada reservasi</div>
-          </div>
-        `;
-        return;
-      }
-
-      list.sort((a,b) => (a.jam||'').localeCompare(b.jam||''));
-
-      list.forEach(r => {
-        const el = document.createElement('div');
-        el.className = 'res-card';
-        el.innerHTML = `
-          <div class="rc-name">${r.nama}</div>
-          <div>${r.jam} • ${r.tempat} • ${r.jumlah} org</div>
-        `;
-        container.appendChild(el);
-      });
+    } catch (e) {
+      console.error('[Calendar.render]', e);
     }
-
-  };
-
-
-  /* ============================================================
-  GLOBAL SAFE EXPORT
-  ============================================================ */
-
-  window.Calendar = Calendar;
-
-  window.prevMonth = () => Calendar.prevMonth();
-  window.nextMonth = () => Calendar.nextMonth();
-  window.goToday   = () => Calendar.goToday();
-
-  window.renderDetailList = (list) =>
-    Calendar.renderDetailList(list);
-
-
-  /* ============================================================
-  SAFE GUARD
-  ============================================================ */
-
-  if (!window.getResForDate) {
-    console.warn('[Calendar] reservation.data.js belum siap');
   }
 
+
+  /* ============================================================
+  2. HEADER
+  ============================================================ */
+
+  function renderHeader (year, month) {
+    const label = $('cal-month-label');
+    if (label) {
+      label.textContent = formatMonthYearSafe(year, month);
+    }
+  }
+
+
+  /* ============================================================
+  3. NAVIGATION
+  ============================================================ */
+
+  function prevMonth () {
+    state.currentMonth--;
+
+    if (state.currentMonth < 0) {
+      state.currentMonth = 11;
+      state.currentYear--;
+    }
+
+    render();
+  }
+
+  function nextMonth () {
+    state.currentMonth++;
+
+    if (state.currentMonth > 11) {
+      state.currentMonth = 0;
+      state.currentYear++;
+    }
+
+    render();
+  }
+
+  function goToday () {
+    const now = new Date();
+
+    state.currentYear  = now.getFullYear();
+    state.currentMonth = now.getMonth();
+
+    render();
+  }
+
+
+  /* ============================================================
+  4. GRID (HEATMAP)
+  ============================================================ */
+
+  function renderGrid (year, month) {
+
+    const grid = $('cal-days');
+    if (!grid) return;
+
+    grid.innerHTML = '';
+
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const today = todayStr?.();
+
+    // kosong
+    for (let i = 0; i < firstDay; i++) {
+      grid.appendChild(createEmptyCell());
+    }
+
+    // isi hari
+    for (let d = 1; d <= daysInMonth; d++) {
+
+      const dateStr = buildDateStr(year, month + 1, d);
+      const summary = getDaySummary?.(dateStr) || {};
+
+      grid.appendChild(
+        createDayCell(d, dateStr, summary, today)
+      );
+    }
+  }
+
+
+  /* ============================================================
+  5. CELL (SMART VISUAL)
+  ============================================================ */
+
+  function createEmptyCell () {
+    const div = document.createElement('div');
+    div.className = 'cal-day empty';
+    return div;
+  }
+
+  function createDayCell (day, dateStr, summary, today) {
+
+    const div = document.createElement('div');
+    div.className = 'cal-day';
+
+    // 🔥 HEATMAP CLASS
+    const level = getHeatLevel(summary.total);
+    if (level) div.classList.add(level);
+
+    // today
+    if (dateStr === today) {
+      div.classList.add('today');
+    }
+
+    div.onclick = () => window.selectDate?.(dateStr);
+
+    /* === NUMBER === */
+    const num = document.createElement('div');
+    num.className = 'cal-day-num';
+    num.textContent = day;
+    div.appendChild(num);
+
+    /* === SUMMARY === */
+    if (summary.total > 0) {
+
+      const badge = document.createElement('div');
+      badge.className = 'cal-badge';
+      badge.innerHTML = `
+        <i class="fas fa-users"></i> ${summary.total}
+      `;
+      div.appendChild(badge);
+
+      /* === PAX === */
+      const pax = document.createElement('div');
+      pax.className = 'cal-pax';
+      pax.textContent = summary.pax + ' org';
+      div.appendChild(pax);
+
+      /* === STATUS === */
+      const status = getDayStatus(summary);
+      if (status) {
+        const st = document.createElement('div');
+        st.className = 'cal-status ' + status.class;
+        st.textContent = status.label;
+        div.appendChild(st);
+      }
+    }
+
+    return div;
+  }
+
+
+  /* ============================================================
+  6. 🔥 MONTH STATS (TOP CARDS)
+  ============================================================ */
+
+  function renderStats (year, month) {
+
+    const list = getResForMonth?.(year, month) || [];
+
+    let total = list.length;
+    let pax   = 0;
+    let dp    = 0;
+    let map   = {};
+
+    list.forEach(r => {
+      pax += Number(r.jumlah) || 0;
+      dp  += Number(r.dp) || 0;
+
+      map[r.date] = (map[r.date] || 0) + 1;
+    });
+
+    // busiest day
+    let busiest = '—';
+    let max = 0;
+
+    Object.keys(map).forEach(date => {
+      if (map[date] > max) {
+        max = map[date];
+        busiest = date;
+      }
+    });
+
+    setText('stat-total', total);
+    setText('stat-pax', pax);
+    setText('stat-dp', 'Rp' + formatRupiah(dp));
+    setText('stat-busiest',
+      busiest !== '—' ? formatDateDisplay(busiest) : '—'
+    );
+  }
+
+
+  /* ============================================================
+  7. DETAIL VIEW
+  ============================================================ */
+
+  function renderDetailList (list) {
+
+    const container = $('detail-list');
+    if (!container) return;
+
+    container.innerHTML = '';
+
+    if (!list || list.length === 0) {
+      container.innerHTML = emptyState();
+      return;
+    }
+
+    list.sort((a, b) => (a.jam || '').localeCompare(b.jam || ''));
+
+    list.forEach(r => {
+      container.appendChild(createCard(r));
+    });
+  }
+
+
+  /* ============================================================
+  8. CARD
+  ============================================================ */
+
+  function createCard (r) {
+
+    const div = document.createElement('div');
+    div.className = 'res-card';
+
+    div.innerHTML = `
+      <div class="rc-top">
+        <div class="rc-name">
+          <div class="rc-avatar">${initial(r.nama)}</div>
+          ${r.nama}
+        </div>
+
+        <div class="rc-badges">
+          <span class="badge badge-orange">${r.jam}</span>
+          <span class="badge badge-gray">${r.tempat}</span>
+          <span class="badge badge-blue">${r.jumlah} org</span>
+        </div>
+      </div>
+
+      <div class="rc-footer">
+
+        <button onclick="handleSendConfirmation('${r.id}')">
+          <i class="fab fa-whatsapp"></i>
+        </button>
+
+        <button onclick="handleSendThankYou('${r.id}')">
+          ❤️
+        </button>
+
+        <button onclick="handleDeleteReservation('${r.id}')">
+          🗑
+        </button>
+
+      </div>
+    `;
+
+    return div;
+  }
+
+
+  /* ============================================================
+  9. HEATMAP LOGIC
+  ============================================================ */
+
+  function getHeatLevel (total) {
+    if (!total) return '';
+
+    if (total >= 10) return 'heat-max';
+    if (total >= 6)  return 'heat-high';
+    if (total >= 3)  return 'heat-mid';
+    return 'heat-low';
+  }
+
+  function getDayStatus (summary) {
+
+    if (summary.total >= 10) {
+      return { label: 'Penuh', class: 'full' };
+    }
+
+    if (summary.total >= 6) {
+      return { label: 'Ramai', class: 'busy' };
+    }
+
+    return null;
+  }
+
+
+  /* ============================================================
+  10. HELPERS
+  ============================================================ */
+
+  function initial (name) {
+    return name ? name.charAt(0).toUpperCase() : '?';
+  }
+
+  function emptyState () {
+    return `
+      <div class="empty-state">
+        <i class="fas fa-calendar"></i>
+        <div>Belum ada reservasi</div>
+      </div>
+    `;
+  }
+
+  function formatMonthYearSafe (year, month) {
+    try {
+      return MONTHS_ID[month] + ' ' + year;
+    } catch {
+      return `${month + 1}/${year}`;
+    }
+  }
+
+
+  /* ============================================================
+  EXPORT
+  ============================================================ */
+
+  return {
+    render,
+    prevMonth,
+    nextMonth,
+    goToday,
+    renderDetailList
+  };
+
+})();
+
+
+/* ============================================================
+GLOBAL BINDING
+============================================================ */
+
+window.prevMonth = Calendar.prevMonth;
+window.nextMonth = Calendar.nextMonth;
+window.goToday   = Calendar.goToday;
+window.renderDetailList = Calendar.renderDetailList;
+
+
+/* ============================================================
+SAFE GUARD
+============================================================ */
+
+(function () {
+  try {
+    if (!window.getDaySummary) {
+      console.warn('[Calendar] Smart engine belum aktif');
+    }
+  } catch (e) {
+    console.error('[Calendar] Init error:', e);
+  }
 })();

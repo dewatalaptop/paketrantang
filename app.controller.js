@@ -1,8 +1,8 @@
 'use strict';
 
 /* ============================================================
-APP.CONTROLLER.JS — PROSERVA CORE (FINAL STABLE + HARDENED)
-PART 1: BOOT → ROUTER → CALENDAR CONTROL
+APP.CONTROLLER.JS — PROSERVA CORE (FINAL HARDENED)
+PART 1: BOOT → ROUTER → WIZARD → GLOBAL INIT → SAVE CORE
 ============================================================ */
 
 const App = (function () {
@@ -16,7 +16,7 @@ const App = (function () {
 
       document.body.classList.add('has-banner');
 
-      // 🔥 FIX: TRIAL SAFE ACCESS (ANTI CRASH)
+      // 🔥 SAFE TRIAL
       if (typeof window.TRIAL !== 'undefined') {
         window.TRIAL.checkAndEnforce?.();
       }
@@ -29,7 +29,6 @@ const App = (function () {
 
       if (isSetup) initApp();
 
-      // 🔥 FIX: TRIAL SAFE ACCESS
       if (typeof window.TRIAL !== 'undefined') {
         window.TRIAL.startTicker?.();
       }
@@ -82,11 +81,10 @@ const App = (function () {
 
       state.biz = state.biz || { name: 'Usaha Saya', type: 'restoran' };
 
-      // 🔥 HARDEN ARRAY STRUCTURE
-      state.menus = Array.isArray(state.menus) ? state.menus : [];
-      state.locations = Array.isArray(state.locations) ? state.locations : [];
+      // 🔥 HARD NORMALIZATION (ANTI BUG GLOBAL)
+      state.menus     = Array.isArray(state.menus) ? state.menus : Object.values(state.menus || {});
+      state.locations = Array.isArray(state.locations) ? state.locations : Object.values(state.locations || {});
 
-      // 🔥 HARDEN OBJECT STRUCTURE
       state.reservations =
         (state.reservations && typeof state.reservations === 'object')
           ? state.reservations
@@ -143,15 +141,11 @@ const App = (function () {
   };
 
   function handleViewInit (name) {
+
     switch (name) {
 
       case 'calendar':
-        // 🔥 SAFE CALL
-        if (window.Calendar?.render) {
-          window.Calendar.render();
-        } else {
-          console.warn('[Calendar] module belum siap');
-        }
+        window.Calendar?.render?.();
         break;
 
       case 'customers':
@@ -209,7 +203,7 @@ const App = (function () {
 
 
   /* ============================================================
-  6. 🔥 CALENDAR CONTROL (FIX UTAMA)
+  6. CALENDAR CONTROL (SAFE)
   ============================================================ */
 
   function initCalendarControls () {
@@ -218,7 +212,6 @@ const App = (function () {
     const next  = $('btn-next-month');
     const today = $('btn-today');
 
-    // 🔥 GUARD: element harus ada
     if (!prev && !next && !today) {
       console.warn('[CalendarControls] tombol tidak ditemukan');
       return;
@@ -236,19 +229,18 @@ const App = (function () {
       window.Calendar?.goToday?.();
     });
   }
-    /* ============================================================
-  7. WIZARD (FULL FIX + HARDENED)
+
+
+  /* ============================================================
+  7. WIZARD (FULL HARDENED)
   ============================================================ */
 
   function initWizard () {
 
     const inputName = $('wz-biz-name');
 
-    // 🔥 HARDEN STATE (WAJIB)
     state.locations = Array.isArray(state.locations) ? state.locations : [];
     state.menus     = Array.isArray(state.menus) ? state.menus : [];
-
-    /* ---------- STEP 1 VALIDATION ---------- */
 
     inputName?.addEventListener('input', () => {
       inputName.classList.remove('error');
@@ -269,7 +261,7 @@ const App = (function () {
     });
 
 
-    /* ---------- STEP 2: TAMBAH LOKASI ---------- */
+    /* ---------- LOKASI ---------- */
 
     $('btn-add-location')?.addEventListener('click', () => {
 
@@ -292,7 +284,7 @@ const App = (function () {
     });
 
 
-    /* ---------- STEP 3: TAMBAH MENU ---------- */
+    /* ---------- MENU ---------- */
 
     $('btn-add-menu')?.addEventListener('click', () => {
 
@@ -318,8 +310,6 @@ const App = (function () {
     });
 
 
-    /* ---------- NAVIGATION ---------- */
-
     $('btn-wizard-next-2')?.addEventListener('click', () => {
       goStep(3);
       renderWizardMenus();
@@ -333,206 +323,52 @@ const App = (function () {
 
 
   /* ============================================================
-  8. WIZARD RENDER
+  🔥 CRITICAL FIX: FORM COLLECTOR (ANTI NULL ERROR)
   ============================================================ */
 
-  function renderWizardLocations () {
+  function collectReservationForm () {
 
-    const container = $('wz-locations-list');
-    if (!container) return;
+    return {
+      id: $('res-edit-id')?.value || null,
+      date: state.selectedDate || todayStr?.(),
 
-    container.innerHTML = '';
+      nama: $('res-nama')?.value?.trim() || '',
+      nomorHp: normalizePhone?.($('res-hp')?.value) || '',
 
-    if (!state.locations.length) {
-      container.innerHTML = `<div class="empty">Belum ada lokasi</div>`;
-      return;
-    }
+      jam: $('res-jam')?.value || '',
+      jumlah: parseInt($('res-jumlah')?.value, 10) || 1,
+      tempat: $('res-tempat')?.value || '',
 
-    state.locations.forEach(loc => {
+      dp: parseInt($('res-dp')?.value, 10) || 0,
+      tipeDp: $('res-tipe-dp')?.value || '',
 
-      const div = document.createElement('div');
-      div.className = 'wz-item';
+      tambahan: $('res-tambahan')?.value?.trim() || '',
 
-      div.innerHTML = `
-        <span>${loc.name} (${loc.capacity})</span>
-        <button onclick="removeWizardLocation('${loc.id}')">
-          <i class="fas fa-trash"></i>
-        </button>
-      `;
-
-      container.appendChild(div);
-    });
-  }
-
-
-  function renderWizardMenus () {
-
-    const container = $('wz-menus-list');
-    if (!container) return;
-
-    container.innerHTML = '';
-
-    if (!state.menus.length) {
-      container.innerHTML = `<div class="empty">Belum ada menu</div>`;
-      return;
-    }
-
-    state.menus.forEach(menu => {
-
-      const div = document.createElement('div');
-      div.className = 'wz-item';
-
-      div.innerHTML = `
-        <span>${menu.name} - Rp${formatRupiah?.(menu.price) || menu.price}</span>
-        <button onclick="removeWizardMenu('${menu.id}')">
-          <i class="fas fa-trash"></i>
-        </button>
-      `;
-
-      container.appendChild(div);
-    });
-  }
-
-
-  /* ============================================================
-  9. REMOVE HANDLER (GLOBAL SAFE)
-  ============================================================ */
-
-  window.removeWizardLocation = function (id) {
-    try {
-      state.locations = state.locations.filter(l => l.id !== id);
-      renderWizardLocations();
-    } catch (e) {
-      console.error('[RemoveLocation]', e);
-    }
-  };
-
-  window.removeWizardMenu = function (id) {
-    try {
-      state.menus = state.menus.filter(m => m.id !== id);
-      renderWizardMenus();
-    } catch (e) {
-      console.error('[RemoveMenu]', e);
-    }
-  };
-
-
-  /* ============================================================
-  10. STEP CONTROL
-  ============================================================ */
-
-  function goStep (step) {
-    document.querySelectorAll('.wizard-step')
-      .forEach(el => el.classList.remove('active'));
-
-    $('wizard-' + step)?.classList.add('active');
-  }
-
-
-  /* ============================================================
-  11. FINISH SETUP
-  ============================================================ */
-
-  function finishSetup () {
-
-    const name = $('wz-biz-name')?.value?.trim();
-
-    if (!name || name.length < 2) {
-      alert('Nama usaha minimal 2 karakter');
-      return;
-    }
-
-    state.biz = {
-      name,
-      type: $('wz-biz-type')?.value || 'restoran'
+      menus: collectSelectedMenus()
     };
-
-    saveBiz?.();
-    saveLocations?.();
-    saveMenus?.();
-
-    DB.set(KEYS.SETUP_DONE, true);
-
-    location.reload();
   }
 
+  function collectSelectedMenus () {
 
-  /* ============================================================
-  12. GLOBAL INIT
-  ============================================================ */
+    const checkboxes = document.querySelectorAll('[data-menu-id]');
+    const menus = [];
 
-  function initGlobalUI () {
-    initModalOverlayClose?.();
-    initKeyboardShortcuts?.();
-    initSidebarOverlay?.();
+    checkboxes.forEach(cb => {
+      if (cb.checked) {
+        const id = cb.dataset.menuId;
+        const menu = state.menus.find(m => m.id === id);
 
-    initWizard();
-    initNav();
-    initTopbar();
-    initCalendarControls();
-  }
-
-  function initNav () {
-    document.querySelectorAll('.nav-item').forEach(el => {
-      el.addEventListener('click', () => {
-        const view = el.dataset.view;
-        if (view) Router.show(view);
-      });
-    });
-  }
-
-  function initTopbar () {
-    $('btn-add-res')?.addEventListener('click', () => {
-      openModal?.('modal-reservation');
-    });
-
-    $('btn-sidebar-toggle')?.addEventListener('click', toggleSidebar);
-  }
-
-
-  /* ============================================================
-  13. HELPERS
-  ============================================================ */
-
-  function setTextSafe (id, val) {
-    const el = $(id);
-    if (el) el.textContent = val;
-  }
-
-
-  /* ============================================================
-  14. 🔥 RESERVATION SAVE (FIX HILANG)
-  ============================================================ */
-
-  function saveReservation () {
-    try {
-
-      clearFormErrors?.();
-
-      const data = collectReservationForm?.();
-
-      if (!validateReservationForm?.(data)) return;
-
-      if (data.id) {
-        updateReservation?.(data);
-        showToast?.('Reservasi diperbarui');
-      } else {
-        data.id = genId?.();
-        data.createdAt = Date.now();
-        data.thankYouSent = false;
-
-        addReservation?.(data);
-        showToast?.('Reservasi ditambahkan 🎉');
+        if (menu) {
+          menus.push({
+            id: menu.id,
+            name: menu.name,
+            quantity: 1
+          });
+        }
       }
+    });
 
-      closeModal?.('modal-reservation');
-
-      Calendar?.render?.();
-
-    } catch (e) {
-      console.error('[SaveReservation]', e);
-      showToast?.('Gagal menyimpan', 'error');
-    }
+    return menus;
   }
 
 
@@ -544,7 +380,233 @@ const App = (function () {
     showView: Router.show,
     selectDate,
     backToCalendar,
-    saveReservation // 🔥 FIX WAJIB
+    saveReservation // lanjut di part 2
   };
 
+})();
+/* ============================================================
+APP.CONTROLLER.JS — PART 2
+SAVE FLOW • GLOBAL BINDING • FINAL HARDENING
+============================================================ */
+
+/* ============================================================
+1. VALIDATION (ANTI SILENT FAIL)
+============================================================ */
+
+function validateReservationForm (d) {
+
+  let valid = true;
+
+  if (!d.nama) {
+    showFieldError?.('err-nama', 'Nama wajib diisi');
+    valid = false;
+  }
+
+  if (!d.jam) {
+    showFieldError?.('err-jam', 'Jam wajib diisi');
+    valid = false;
+  }
+
+  if (!d.jumlah || d.jumlah < 1) {
+    showFieldError?.('err-jumlah', 'Minimal 1 orang');
+    valid = false;
+  }
+
+  if (!d.tempat) {
+    showFieldError?.('err-tempat', 'Pilih lokasi');
+    valid = false;
+  }
+
+  if (!valid) {
+    console.warn('[VALIDATION FAILED]', d);
+  }
+
+  return valid;
+}
+
+
+/* ============================================================
+2. 🔥 SAVE RESERVATION (CORE FIX)
+============================================================ */
+
+function saveReservation () {
+
+  try {
+
+    clearFormErrors?.();
+
+    const data = collectReservationForm?.();
+
+    if (!data) {
+      console.error('[SAVE] form kosong');
+      return;
+    }
+
+    if (!validateReservationForm(data)) return;
+
+    let success = false;
+
+    if (data.id) {
+
+      success = updateReservation?.(data);
+
+      if (success) {
+        showToast?.('Reservasi diperbarui');
+      }
+
+    } else {
+
+      data.id = genId?.();
+      data.createdAt = Date.now();
+      data.thankYouSent = false;
+
+      success = addReservation?.(data);
+
+      if (success) {
+        showToast?.('Reservasi ditambahkan 🎉');
+      }
+    }
+
+    if (!success) {
+      showToast?.('Gagal menyimpan data', 'error');
+      return;
+    }
+
+    closeModal?.('modal-reservation');
+
+    refreshAfterSave();
+
+  } catch (e) {
+    console.error('[SAVE ERROR]', e);
+    showToast?.('Terjadi error saat menyimpan', 'error');
+  }
+}
+
+
+/* ============================================================
+3. 🔥 REFRESH UI (ANTI STALE VIEW)
+============================================================ */
+
+function refreshAfterSave () {
+
+  try {
+
+    window.Calendar?.render?.();
+
+    if (window.state?.selectedDate) {
+      renderDetailList?.(
+        getResForDate?.(state.selectedDate) || []
+      );
+    }
+
+  } catch (e) {
+    console.error('[REFRESH ERROR]', e);
+  }
+}
+
+
+/* ============================================================
+4. DELETE HANDLER
+============================================================ */
+
+window.handleDeleteReservation = function (id) {
+
+  try {
+
+    if (!confirmAction?.('Hapus reservasi ini?')) return;
+
+    const ok = deleteReservation?.(id);
+
+    if (ok) {
+      showToast?.('Reservasi dihapus', 'info');
+      refreshAfterSave();
+    }
+
+  } catch (e) {
+    console.error('[DELETE ERROR]', e);
+  }
+};
+
+
+/* ============================================================
+5. WHATSAPP HANDLER
+============================================================ */
+
+window.handleSendConfirmation = function (id) {
+  try {
+    if (!sendConfirmation?.(id)) {
+      showToast?.('Nomor tidak tersedia', 'error');
+    }
+  } catch (e) {
+    console.error('[WA CONFIRM ERROR]', e);
+  }
+};
+
+window.handleSendThankYou = function (id) {
+  try {
+    if (!sendThankYou?.(id)) {
+      showToast?.('Gagal kirim', 'error');
+    } else {
+      showToast?.('Ucapan terkirim 🎉');
+    }
+  } catch (e) {
+    console.error('[WA THANKYOU ERROR]', e);
+  }
+};
+
+
+/* ============================================================
+6. GLOBAL SAVE BINDING (🔥 WAJIB)
+============================================================ */
+
+(function bindSaveButton () {
+
+  const btn = $('btn-save-res');
+
+  if (!btn) {
+    console.warn('[SAVE BTN] tidak ditemukan');
+    return;
+  }
+
+  btn.addEventListener('click', function () {
+    saveReservation();
+  });
+
+})();
+
+
+/* ============================================================
+7. GLOBAL EXPORT (FINAL)
+============================================================ */
+
+window.saveReservation = saveReservation;
+
+
+/* ============================================================
+8. STATE NORMALIZATION (ANTI BUG LEGACY DATA)
+============================================================ */
+
+(function normalizeStateDeep () {
+  try {
+
+    if (!window.state) return;
+
+    // locations
+    if (!Array.isArray(state.locations)) {
+      state.locations = Object.values(state.locations || {});
+    }
+
+    // menus
+    if (!Array.isArray(state.menus)) {
+      state.menus = Object.values(state.menus || {});
+    }
+
+    // reservations
+    if (!state.reservations || typeof state.reservations !== 'object') {
+      state.reservations = {};
+    }
+
+  } catch (e) {
+    console.warn('[STATE NORMALIZE ERROR]', e);
+  }
 })();

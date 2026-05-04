@@ -1,105 +1,123 @@
 'use strict';
 
 /* ============================================================
-NOTIFICATION.WHATSAPP.SERVICE.JS — PROSERVA CORE
-WA Gateway + Notification Engine
+NOTIFICATION.WHATSAPP.SERVICE.JS — PROSERVA CORE (REWRITE)
+Robust • Safe • Scalable
 ============================================================ */
 
 /* ============================================================
-1. WHATSAPP GATEWAY (ABSTRACTION LAYER)
+1. WHATSAPP GATEWAY
 ============================================================ */
 
-/**
- * Open WhatsApp chat (current: wa.me)
- * Future: replace with API (Fonnte / Twilio / WA Business)
- */
 function sendWhatsApp (phone, message) {
-  if (!phone) return;
+  if (!phone) return false;
 
-  var formatted = normalizePhone(phone);
+  const formatted = normalizePhone(phone);
 
-  var url = 'https://wa.me/' + formatted +
-            '?text=' + encodeURIComponent(message || '');
-
-  window.open(url, '_blank', 'noopener');
-}
-
-/* ============================================================
-2. MESSAGE BUILDERS
-============================================================ */
-
-/**
- * Reservation confirmation message
- */
-function buildConfirmationMsg (r) {
-  var menuList = '*(tidak ada)*';
-
-  if (Array.isArray(r.menus) && r.menus.length > 0) {
-    menuList = r.menus.map(function (item) {
-      var md = getMenuByName(item.name);
-      var details = md && md.details ? md.details : [];
-
-      return (
-        '  • *' + item.quantity + 'x ' + item.name + '*' +
-        (details.length ? '\n    ' + details.join(', ') : '')
-      );
-    }).join('\n');
+  if (!formatted || formatted.length < 10) {
+    console.warn('[WA] Invalid phone:', phone);
+    return false;
   }
 
+  const url = 'https://wa.me/' + formatted +
+              '?text=' + encodeURIComponent(message || '');
+
+  try {
+    const win = window.open(url, '_blank', 'noopener');
+
+    if (!win) {
+      showToast('Popup diblokir browser 😢', 'error');
+      return false;
+    }
+
+    return true;
+
+  } catch (e) {
+    console.error('[WA] open failed', e);
+    return false;
+  }
+}
+
+/* ============================================================
+2. MESSAGE BUILDERS (SANITIZED)
+============================================================ */
+
+function safeText (val) {
+  return sanitizeText(val || '', 120);
+}
+
+function buildConfirmationMsg (r) {
+
+  const menuList = (Array.isArray(r.menus) && r.menus.length)
+    ? r.menus.map(item => {
+        const md = getMenuByName(item.name);
+        const details = md?.details || [];
+
+        return (
+          '  • *' + item.quantity + 'x ' + safeText(item.name) + '*' +
+          (details.length
+            ? '\n    ' + details.join(', ')
+            : '')
+        );
+      }).join('\n')
+    : '*(tidak ada)*';
+
   return (
-    'Halo Kak *' + r.nama + '* 👋\n\n' +
-    'Kami dari *' + state.biz.name + '* ingin konfirmasi reservasi:\n\n' +
-    '🗓 *Tanggal:* ' + formatDateFull(r.date) + '\n' +
-    '⏰ *Jam:* ' + r.jam + '\n' +
-    '📍 *Tempat:* ' + r.tempat + '\n' +
-    '👥 *Jumlah:* ' + r.jumlah + ' orang\n\n' +
-    '🍽 *Pesanan:*\n' + menuList + '\n\n' +
-    (r.dp > 0
-      ? '💰 *DP:* Rp' + formatRupiah(r.dp) + '\n\n'
-      : '') +
-    (r.tambahan
-      ? '📝 *Catatan:* ' + r.tambahan + '\n\n'
-      : '') +
-    'Mohon konfirmasi ya 🙏'
+`Halo Kak *${safeText(r.nama)}* 👋
+
+Kami dari *${safeText(state.biz.name)}* ingin konfirmasi reservasi:
+
+🗓 *Tanggal:* ${formatDateFull(r.date)}
+⏰ *Jam:* ${r.jam}
+📍 *Tempat:* ${safeText(r.tempat)}
+👥 *Jumlah:* ${r.jumlah} orang
+
+🍽 *Pesanan:*
+${menuList}
+
+${r.dp > 0 ? `💰 *DP:* Rp${formatRupiah(r.dp)}\n\n` : ''}
+${r.tambahan ? `📝 *Catatan:* ${safeText(r.tambahan)}\n\n` : ''}
+
+Mohon konfirmasi ya 🙏`
   );
 }
 
-/**
- * Thank you message
- */
 function buildThankYouMsg (r) {
   return (
-    'Halo Kak *' + r.nama + '* 👋\n\n' +
-    'Terima kasih sudah berkunjung ke *' + state.biz.name + '* 🙏\n\n' +
-    'Semoga pengalaman Kakak menyenangkan 😊\n\n' +
-    'Kami tunggu kedatangannya kembali ✨'
+`Halo Kak *${safeText(r.nama)}* 👋
+
+Terima kasih sudah berkunjung ke *${safeText(state.biz.name)}* 🙏
+
+Semoga pengalaman Kakak menyenangkan 😊
+
+Kami tunggu kedatangannya kembali ✨`
   );
 }
 
-/**
- * Daily summary message
- */
 function buildDailySummaryMsg (dateStr, reservations) {
 
-  var msg =
-    '*📋 LAPORAN RESERVASI*\n' +
-    '*' + state.biz.name + '*\n\n' +
-    '📅 ' + formatDateFull(dateStr) + '\n' +
-    '────────────────────────\n\n';
+  let msg =
+`📋 *LAPORAN RESERVASI*
+*${safeText(state.biz.name)}*
+
+📅 ${formatDateFull(dateStr)}
+────────────────────────
+
+`;
 
   if (!reservations.length) {
     return msg + '*Tidak ada reservasi.*';
   }
 
   reservations
-    .sort(function (a, b) {
-      return (a.jam || '').localeCompare(b.jam || '');
-    })
-    .forEach(function (r, i) {
+    .sort((a, b) => (a.jam || '').localeCompare(b.jam || ''))
+    .forEach((r, i) => {
 
       msg +=
-        '*' + (i + 1) + '. ' + r.nama + '*\n' +
-        '⏰ ' + r.jam + ' | 📍 ' + r.tempat + ' | 👥 ' + r.jumlah + '\n\n';
+`*${i + 1}. ${safeText(r.nama)}*
+⏰ ${r.jam} | 📍 ${safeText(r.tempat)} | 👥 ${r.jumlah}
+
+`;
     });
 
   return msg;
@@ -109,105 +127,117 @@ function buildDailySummaryMsg (dateStr, reservations) {
 3. ACTION HELPERS
 ============================================================ */
 
-/**
- * Send confirmation
- */
 function sendConfirmation (id) {
-  var r = findReservationById(id);
-  if (!r || !r.nomorHp) return false;
+  const r = findReservationById(id);
 
-  sendWhatsApp(r.nomorHp, buildConfirmationMsg(r));
-  return true;
+  if (!r || !r.nomorHp) {
+    showToast('Nomor tidak tersedia', 'error');
+    return false;
+  }
+
+  return sendWhatsApp(r.nomorHp, buildConfirmationMsg(r));
 }
 
-/**
- * Send thank you + update state
- */
 function sendThankYou (id) {
-  var r = findReservationById(id);
+  const r = findReservationById(id);
+
   if (!r || !r.nomorHp) return false;
 
-  sendWhatsApp(r.nomorHp, buildThankYouMsg(r));
+  const ok = sendWhatsApp(r.nomorHp, buildThankYouMsg(r));
 
-  var updated = Object.assign({}, r, {
-    thankYouSent: true
-  });
+  if (ok) {
+    const updated = { ...r, thankYouSent: true };
+    updateReservation(updated);
+  }
 
-  updateReservation(updated);
-
-  return true;
+  return ok;
 }
 
 /* ============================================================
-4. NOTIFICATION ENGINE
+4. NOTIFICATION ENGINE (UPGRADED)
 ============================================================ */
 
 var NOTIFICATION = {
 
   interval: null,
 
-  /**
-   * Get reservations needing thank-you
-   */
   getPendingThankYous: function () {
-    var now = Date.now();
-    var today = todayStr();
+    const now = Date.now();
 
-    return getAllReservations().filter(function (r) {
+    return getAllReservations().filter(r => {
 
-      if (!r.date || r.date > today) return false;
+      if (!r.date || !r.jam) return false;
       if (r.thankYouSent) return false;
-      if (!r.nomorHp || !r.jam) return false;
+      if (!r.nomorHp) return false;
 
-      var resTime = new Date(r.date + 'T' + r.jam).getTime();
+      // FIX timezone bug
+      const [y, m, d] = r.date.split('-').map(Number);
+      const [hh, mm] = r.jam.split(':').map(Number);
+
+      const resTime = new Date(y, m - 1, d, hh, mm).getTime();
 
       return now > resTime + (3 * 60 * 60 * 1000);
     });
   },
 
-  /**
-   * Start polling
-   */
-  start: function () {
-    var self = this;
+  updateUI: function (pending) {
+    const dot = $('notif-dot');
+    const list = $('notif-list');
 
-    if (self.interval) {
-      clearInterval(self.interval);
+    if (!dot || !list) return;
+
+    if (pending.length === 0) {
+      dot.style.display = 'none';
+      list.innerHTML = '<div class="nd-empty">Semua beres 🎉</div>';
+      return;
     }
 
-    self.interval = setInterval(function () {
-      var pending = self.getPendingThankYous();
+    dot.style.display = 'block';
 
-      if (pending.length > 0) {
-        console.log('[NOTIF] Pending thank-you:', pending.length);
-      }
+    list.innerHTML = pending.map(r => `
+      <div class="notif-item">
+        <div class="ni-name">${safeText(r.nama)}</div>
+        <div class="ni-date">${formatDateFull(r.date)} • ${r.jam}</div>
+      </div>
+    `).join('');
+  },
 
-    }, 2 * 60 * 1000);
+  start: function () {
+    if (this.interval) clearInterval(this.interval);
+
+    const run = () => {
+      const pending = this.getPendingThankYous();
+      this.updateUI(pending);
+    };
+
+    run(); // initial
+
+    this.interval = setInterval(run, 2 * 60 * 1000);
   }
-
 };
 
 /* ============================================================
-5. BROADCAST SERVICE
+5. BROADCAST
 ============================================================ */
 
 function sendBroadcast (phone, name, template) {
-  if (!phone || !template) return;
+  if (!phone || !template) return false;
 
-  var msg = template.replace(/\bkak\b/gi, 'Kak *' + name + '*');
+  const msg = template.replace(/\bkak\b/gi, `Kak *${safeText(name)}*`);
 
-  sendWhatsApp(phone, msg);
+  return sendWhatsApp(phone, msg);
 }
 
 /* ============================================================
 6. SAFE GUARD
 ============================================================ */
+
 (function () {
   try {
     if (!window.findReservationById) {
       console.warn('[Proserva] reservation.data.js belum load');
     }
   } catch (e) {
-    console.error('[Proserva] Notification service error:', e);
+    console.error('[Proserva] Notification error:', e);
   }
 })();

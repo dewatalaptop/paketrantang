@@ -1,8 +1,8 @@
 'use strict';
 
 /* ============================================================
-RESERVATION.DATA.JS — PROSERVA CORE (STABLE REWRITE)
-Safe • Compatible • Calendar-ready
+RESERVATION.DATA.JS — PROSERVA CORE (SMART ENGINE)
+Fast • Aggregated • Calendar-ready • Scalable
 ============================================================ */
 
 /* ============================================================
@@ -11,9 +11,12 @@ Safe • Compatible • Calendar-ready
 
 function ensureState () {
   if (!window.state) window.state = {};
-  if (!state.reservations) state.reservations = {};
-  if (!state.locations) state.locations = {};
+
+  state.reservations = state.reservations || {};
+  state.locations    = state.locations || {};
+  state.calendarMeta = state.calendarMeta || {}; // 🔥 NEW
 }
+
 
 /* ============================================================
 2. HELPERS
@@ -27,17 +30,14 @@ function getMonthKeyFromDate (dateStr) {
   return dateStr ? dateStr.substring(0, 7) : null;
 }
 
-/**
- * IMPORTANT FIX:
- * support locations as object OR array
- */
 function getLocationsArray () {
   if (!state.locations) return [];
 
-  if (Array.isArray(state.locations)) return state.locations;
-
-  return Object.values(state.locations);
+  return Array.isArray(state.locations)
+    ? state.locations
+    : Object.values(state.locations);
 }
+
 
 /* ============================================================
 3. GETTERS
@@ -45,139 +45,181 @@ function getLocationsArray () {
 
 function getResForMonth (year, monthIdx) {
   ensureState();
-
-  var key = getMonthKey(year, monthIdx);
-  return state.reservations[key] || [];
+  return state.reservations[getMonthKey(year, monthIdx)] || [];
 }
 
 function getResForDate (dateStr) {
   ensureState();
-
   if (!dateStr) return [];
 
-  var mk = getMonthKeyFromDate(dateStr);
-  var arr = state.reservations[mk] || [];
+  const mk = getMonthKeyFromDate(dateStr);
+  const arr = state.reservations[mk] || [];
 
   return arr
-    .filter(function (r) {
-      return r.date === dateStr;
-    })
-    .sort(function (a, b) {
-      return (a.jam || '').localeCompare(b.jam || '');
-    });
+    .filter(r => r.date === dateStr)
+    .sort((a, b) => (a.jam || '').localeCompare(b.jam || ''));
 }
 
 function getAllReservations () {
   ensureState();
 
   return Object.values(state.reservations)
-    .reduce(function (acc, arr) {
-      return acc.concat(arr);
-    }, [])
-    .sort(function (a, b) {
-      return (a.date + a.jam).localeCompare(b.date + b.jam);
-    });
+    .flat()
+    .sort((a, b) => (a.date + a.jam).localeCompare(b.date + b.jam));
 }
 
 function findReservationById (id) {
   if (!id) return null;
 
-  for (var mk in state.reservations) {
-    var found = state.reservations[mk].find(function (r) {
-      return r.id === id;
-    });
-
+  for (const mk in state.reservations) {
+    const found = state.reservations[mk].find(r => r.id === id);
     if (found) return found;
   }
 
   return null;
 }
 
+
 /* ============================================================
-4. BUSINESS VALIDATION
+4. 🔥 CALENDAR META ENGINE (CORE UPGRADE)
+============================================================ */
+
+/**
+ * Build summary per day
+ * → dipakai untuk calendar heatmap
+ */
+function rebuildCalendarMeta () {
+  ensureState();
+
+  state.calendarMeta = {};
+
+  const all = getAllReservations();
+
+  all.forEach(r => {
+
+    if (!r.date) return;
+
+    if (!state.calendarMeta[r.date]) {
+      state.calendarMeta[r.date] = {
+        total: 0,
+        pax: 0,
+        dp: 0,
+        locations: {}
+      };
+    }
+
+    const meta = state.calendarMeta[r.date];
+
+    meta.total += 1;
+    meta.pax   += Number(r.jumlah) || 0;
+    meta.dp    += Number(r.dp) || 0;
+
+    if (!meta.locations[r.tempat]) {
+      meta.locations[r.tempat] = 0;
+    }
+
+    meta.locations[r.tempat] += 1;
+  });
+}
+
+/**
+ * Get summary cepat (O(1))
+ */
+function getDaySummary (dateStr) {
+  ensureState();
+  return state.calendarMeta[dateStr] || {
+    total: 0,
+    pax: 0,
+    dp: 0,
+    locations: {}
+  };
+}
+
+
+/* ============================================================
+5. BUSINESS VALIDATION (SMARTER)
 ============================================================ */
 
 function isCapacityExceeded (res) {
-  if (!res || !res.tempat || !res.jumlah) return false;
+  if (!res?.tempat || !res?.jumlah) return false;
 
-  var loc = getLocationsArray().find(function (l) {
-    return l.name === res.tempat;
-  });
+  const loc = getLocationsArray().find(l => l.name === res.tempat);
 
-  if (!loc || !loc.capacity) return false;
+  if (!loc?.capacity) return false;
 
   return res.jumlah > loc.capacity;
 }
 
+/**
+ * 🔥 improved conflict:
+ * same location + overlapping time
+ */
 function isTimeConflict (res, ignoreId) {
-  var list = getResForDate(res.date);
 
-  return list.some(function (r) {
-    return (
-      r.id !== ignoreId &&
-      r.tempat === res.tempat &&
-      r.jam === res.jam
-    );
+  const list = getResForDate(res.date);
+
+  return list.some(r => {
+
+    if (r.id === ignoreId) return false;
+    if (r.tempat !== res.tempat) return false;
+
+    return r.jam === res.jam; // (next upgrade: range overlap)
   });
 }
 
 function validateReservationBusiness (res, ignoreId) {
 
   if (isCapacityExceeded(res)) {
-    showToast && showToast('Melebihi kapasitas lokasi', 'error');
+    showToast?.('Melebihi kapasitas lokasi', 'error');
     return false;
   }
 
   if (isTimeConflict(res, ignoreId)) {
-    showToast && showToast('Slot waktu sudah terisi', 'error');
+    showToast?.('Slot waktu sudah terisi', 'error');
     return false;
   }
 
   return true;
 }
 
+
 /* ============================================================
-5. CREATE
+6. CREATE
 ============================================================ */
 
 function addReservation (res) {
   ensureState();
 
-  if (!res || !res.date) return false;
-
+  if (!res?.date) return false;
   if (!validateReservationBusiness(res)) return false;
 
-  var mk = getMonthKeyFromDate(res.date);
+  const mk = getMonthKeyFromDate(res.date);
 
-  if (!state.reservations[mk]) {
-    state.reservations[mk] = [];
-  }
-
+  state.reservations[mk] = state.reservations[mk] || [];
   state.reservations[mk].push(normalizeReservation(res));
 
   persist();
+  rebuildCalendarMeta(); // 🔥 penting
+
   return true;
 }
 
+
 /* ============================================================
-6. UPDATE (SUPPORT MOVE MONTH)
+7. UPDATE (SUPPORT MOVE DATE)
 ============================================================ */
 
 function updateReservation (res) {
   ensureState();
 
-  if (!res || !res.id || !res.date) return false;
-
+  if (!res?.id || !res?.date) return false;
   if (!validateReservationBusiness(res, res.id)) return false;
 
-  var oldMk = null;
-  var idx   = -1;
+  let oldMk = null;
+  let idx = -1;
 
-  for (var mk in state.reservations) {
-    var i = state.reservations[mk].findIndex(function (r) {
-      return r.id === res.id;
-    });
-
+  for (const mk in state.reservations) {
+    const i = state.reservations[mk].findIndex(r => r.id === res.id);
     if (i !== -1) {
       oldMk = mk;
       idx = i;
@@ -189,24 +231,24 @@ function updateReservation (res) {
 
   state.reservations[oldMk].splice(idx, 1);
 
-  if (state.reservations[oldMk].length === 0) {
+  if (!state.reservations[oldMk].length) {
     delete state.reservations[oldMk];
   }
 
-  var newMk = getMonthKeyFromDate(res.date);
+  const newMk = getMonthKeyFromDate(res.date);
 
-  if (!state.reservations[newMk]) {
-    state.reservations[newMk] = [];
-  }
-
+  state.reservations[newMk] = state.reservations[newMk] || [];
   state.reservations[newMk].push(normalizeReservation(res));
 
   persist();
+  rebuildCalendarMeta();
+
   return true;
 }
 
+
 /* ============================================================
-7. DELETE
+8. DELETE
 ============================================================ */
 
 function deleteReservation (id) {
@@ -214,23 +256,20 @@ function deleteReservation (id) {
 
   if (!id) return false;
 
-  for (var mk in state.reservations) {
+  for (const mk in state.reservations) {
 
-    var arr = state.reservations[mk];
-
-    var idx = arr.findIndex(function (r) {
-      return r.id === id;
-    });
+    const arr = state.reservations[mk];
+    const idx = arr.findIndex(r => r.id === id);
 
     if (idx !== -1) {
 
       arr.splice(idx, 1);
 
-      if (arr.length === 0) {
-        delete state.reservations[mk];
-      }
+      if (!arr.length) delete state.reservations[mk];
 
       persist();
+      rebuildCalendarMeta();
+
       return true;
     }
   }
@@ -238,8 +277,9 @@ function deleteReservation (id) {
   return false;
 }
 
+
 /* ============================================================
-8. NORMALIZER
+9. NORMALIZER
 ============================================================ */
 
 function normalizeReservation (r) {
@@ -260,32 +300,30 @@ function normalizeReservation (r) {
   };
 }
 
+
 /* ============================================================
-9. PERSISTENCE
+10. PERSISTENCE
 ============================================================ */
 
 function persist () {
   try {
-    saveReservations && saveReservations();
+    saveReservations?.();
   } catch (e) {
-    console.error('[RESERVATION SAVE ERROR]', e);
-    showToast && showToast('Gagal menyimpan data', 'error');
+    console.error('[SAVE ERROR]', e);
+    showToast?.('Gagal menyimpan data', 'error');
   }
 }
 
+
 /* ============================================================
-10. SAFE GUARD
+11. INIT
 ============================================================ */
 
 (function () {
   try {
     ensureState();
-
-    if (!window.state) {
-      console.warn('[Proserva] state tidak tersedia');
-    }
-
+    rebuildCalendarMeta(); // 🔥 auto build saat load
   } catch (e) {
-    console.error('[Proserva] Reservation init error:', e);
+    console.error('[Reservation Init Error]', e);
   }
 })();

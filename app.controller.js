@@ -177,8 +177,8 @@ const App = (function () {
         break;
 
       case 'customers':
-        renderCustomersTable?.();
-        break;
+  Customers?.render?.();
+  break;
 
       case 'analysis':
         setupAnalysisSelectors?.();

@@ -1,8 +1,8 @@
 'use strict';
 
 /* ============================================================
-APP.CONTROLLER.JS — PROSERVA CORE (PATCHED)
-Fix Wizard Step 2 (Tambah Lokasi)
+APP.CONTROLLER.JS — PROSERVA CORE (FINAL STABLE + COMPLETE)
+Fix Wizard Step 2 + Step 3 (Lokasi & Menu)
 ============================================================ */
 
 const App = (function () {
@@ -61,10 +61,6 @@ const App = (function () {
 
       Router.show('calendar');
 
-      if (!window.Calendar) {
-        console.warn('[Calendar] belum load');
-      }
-
       NOTIFICATION?.start?.();
 
     } catch (err) {
@@ -104,11 +100,6 @@ const App = (function () {
 
     setTextSafe('cal-biz-name', name);
     setTextSafe('sidebar-biz-name', name);
-
-    const sub = $('cal-subtitle');
-    if (sub) {
-      sub.textContent = `Kelola reservasi ${name} dengan mudah.`;
-    }
   }
 
 
@@ -119,7 +110,10 @@ const App = (function () {
   const Router = {
     show (name) {
 
-      hideAllViews();
+      document.querySelectorAll('#content .view').forEach(v => {
+        v.style.display = 'none';
+        v.classList.remove('active-view');
+      });
 
       const el = $('view-' + name);
       if (el) {
@@ -127,62 +121,29 @@ const App = (function () {
         el.classList.add('active-view');
       }
 
-      setActiveNav(name);
+      document.querySelectorAll('.nav-item').forEach(n => {
+        n.classList.toggle('active', n.dataset.view === name);
+      });
+
       handleViewInit(name);
     }
   };
 
-  function hideAllViews () {
-    document.querySelectorAll('#content .view').forEach(v => {
-      v.style.display = 'none';
-      v.classList.remove('active-view');
-    });
-  }
-
-  function setActiveNav (name) {
-    document.querySelectorAll('.nav-item').forEach(n => {
-      n.classList.toggle('active', n.dataset.view === name);
-    });
-  }
-
-
-  /* ============================================================
-  5. VIEW HANDLER
-  ============================================================ */
-
   function handleViewInit (name) {
 
     switch (name) {
-
-      case 'calendar':
-        Calendar?.render?.();
-        break;
-
-      case 'customers':
-        Customers?.render?.();
-        break;
-
-      case 'analysis':
-        Analysis?.init?.();
-        break;
-
-      case 'menus':
-        renderMenusTable?.();
-        break;
-
-      case 'locations':
-        renderLocationsTable?.();
-        break;
-
-      case 'broadcast':
-        loadBroadcastView?.();
-        break;
+      case 'calendar': Calendar?.render?.(); break;
+      case 'customers': Customers?.render?.(); break;
+      case 'analysis': Analysis?.init?.(); break;
+      case 'menus': renderMenusTable?.(); break;
+      case 'locations': renderLocationsTable?.(); break;
+      case 'broadcast': loadBroadcastView?.(); break;
     }
   }
 
 
   /* ============================================================
-  6. CALENDAR FLOW
+  5. CALENDAR FLOW
   ============================================================ */
 
   function selectDate (dateStr) {
@@ -196,12 +157,7 @@ const App = (function () {
 
     Router.show('detail');
 
-    try {
-      renderDetailList?.(getResForDate?.(dateStr) || []);
-    } catch (e) {
-      console.error('[DETAIL ERROR]', e);
-    }
-
+    renderDetailList?.(getResForDate?.(dateStr) || []);
     scrollTopSmooth?.();
   }
 
@@ -212,21 +168,21 @@ const App = (function () {
 
 
   /* ============================================================
-  7. WIZARD (FIXED)
+  6. WIZARD (🔥 FULL FIX)
   ============================================================ */
 
   function initWizard () {
 
     const inputName = $('wz-biz-name');
 
-    // STEP 1 VALIDATION
+    /* ---------- STEP 1 VALIDATION ---------- */
+
     inputName?.addEventListener('input', () => {
-      if (inputName.value.trim()) {
-        inputName.classList.remove('error');
-      }
+      inputName.classList.remove('error');
     });
 
     $('btn-wizard-next-1')?.addEventListener('click', () => {
+
       const name = inputName?.value?.trim();
 
       if (!name) {
@@ -236,26 +192,19 @@ const App = (function () {
       }
 
       goStep(2);
-      renderWizardLocations(); // 🔥 render awal
+      renderWizardLocations();
     });
 
-    // 🔥 FIX: ADD LOCATION
+
+    /* ---------- STEP 2 (LOKASI) ---------- */
+
     $('btn-add-location')?.addEventListener('click', () => {
 
       const name = $('wz-loc-name')?.value?.trim();
       const cap  = parseInt($('wz-loc-cap')?.value, 10);
 
-      if (!name) {
-        alert('Nama lokasi wajib');
-        return;
-      }
-
-      if (!cap || cap < 1) {
-        alert('Kapasitas minimal 1');
-        return;
-      }
-
-      state.locations = state.locations || [];
+      if (!name) return alert('Nama lokasi wajib');
+      if (!cap || cap < 1) return alert('Kapasitas minimal 1');
 
       state.locations.push({
         id: genId?.(),
@@ -269,12 +218,50 @@ const App = (function () {
       renderWizardLocations();
     });
 
-    $('btn-wizard-next-2')?.addEventListener('click', () => goStep(3));
+
+    /* ---------- STEP 3 (🔥 MENU FIX) ---------- */
+
+    $('btn-add-menu')?.addEventListener('click', () => {
+
+      const name  = $('wz-menu-name')?.value?.trim();
+      const price = parseInt($('wz-menu-price')?.value, 10);
+      const detail = $('wz-menu-detail')?.value?.trim();
+
+      if (!name) return alert('Nama menu wajib');
+      if (!price || price <= 0) return alert('Harga tidak valid');
+
+      state.menus.push({
+        id: genId?.(),
+        name,
+        price,
+        details: detail ? [detail] : []
+      });
+
+      $('wz-menu-name').value = '';
+      $('wz-menu-price').value = '';
+      $('wz-menu-detail').value = '';
+
+      renderWizardMenus();
+    });
+
+
+    /* ---------- NAV ---------- */
+
+    $('btn-wizard-next-2')?.addEventListener('click', () => {
+      goStep(3);
+      renderWizardMenus();
+    });
+
     $('btn-wizard-back-1')?.addEventListener('click', () => goStep(1));
     $('btn-wizard-back-2')?.addEventListener('click', () => goStep(2));
+
     $('btn-wizard-finish')?.addEventListener('click', finishSetup);
   }
 
+
+  /* ============================================================
+  7. WIZARD RENDER
+  ============================================================ */
 
   function renderWizardLocations () {
 
@@ -283,7 +270,7 @@ const App = (function () {
 
     container.innerHTML = '';
 
-    if (!state.locations || state.locations.length === 0) {
+    if (!state.locations.length) {
       container.innerHTML = `<div class="empty">Belum ada lokasi</div>`;
       return;
     }
@@ -304,11 +291,53 @@ const App = (function () {
     });
   }
 
+  function renderWizardMenus () {
+
+    const container = $('wz-menus-list');
+    if (!container) return;
+
+    container.innerHTML = '';
+
+    if (!state.menus.length) {
+      container.innerHTML = `<div class="empty">Belum ada menu</div>`;
+      return;
+    }
+
+    state.menus.forEach(menu => {
+
+      const div = document.createElement('div');
+      div.className = 'wz-item';
+
+      div.innerHTML = `
+        <span>${menu.name} - Rp${formatRupiah(menu.price)}</span>
+        <button onclick="removeWizardMenu('${menu.id}')">
+          <i class="fas fa-trash"></i>
+        </button>
+      `;
+
+      container.appendChild(div);
+    });
+  }
+
+
+  /* ============================================================
+  8. REMOVE HANDLERS
+  ============================================================ */
+
   window.removeWizardLocation = function (id) {
-    state.locations = (state.locations || []).filter(l => l.id !== id);
+    state.locations = state.locations.filter(l => l.id !== id);
     renderWizardLocations();
   };
 
+  window.removeWizardMenu = function (id) {
+    state.menus = state.menus.filter(m => m.id !== id);
+    renderWizardMenus();
+  };
+
+
+  /* ============================================================
+  9. STEP CONTROL
+  ============================================================ */
 
   function goStep (step) {
     document.querySelectorAll('.wizard-step')
@@ -317,6 +346,10 @@ const App = (function () {
     $('wizard-' + step)?.classList.add('active');
   }
 
+
+  /* ============================================================
+  10. FINISH
+  ============================================================ */
 
   function finishSetup () {
 
@@ -328,12 +361,9 @@ const App = (function () {
     }
 
     state.biz = {
-      name: name,
+      name,
       type: $('wz-biz-type')?.value || 'restoran'
     };
-
-    state.locations = state.locations || [];
-    state.menus = state.menus || [];
 
     saveBiz?.();
     saveLocations?.();
@@ -346,8 +376,18 @@ const App = (function () {
 
 
   /* ============================================================
-  8. NAV + TOPBAR
+  11. GLOBAL INIT
   ============================================================ */
+
+  function initGlobalUI () {
+    initModalOverlayClose?.();
+    initKeyboardShortcuts?.();
+    initSidebarOverlay?.();
+
+    initWizard();
+    initNav();
+    initTopbar();
+  }
 
   function initNav () {
     document.querySelectorAll('.nav-item').forEach(el => {
@@ -368,22 +408,7 @@ const App = (function () {
 
 
   /* ============================================================
-  9. GLOBAL INIT
-  ============================================================ */
-
-  function initGlobalUI () {
-    initModalOverlayClose?.();
-    initKeyboardShortcuts?.();
-    initSidebarOverlay?.();
-
-    initWizard();
-    initNav();
-    initTopbar();
-  }
-
-
-  /* ============================================================
-  10. HELPERS
+  12. HELPERS
   ============================================================ */
 
   function setTextSafe (id, val) {
@@ -406,24 +431,9 @@ const App = (function () {
 
 
 /* ============================================================
-GLOBAL BINDING
+GLOBAL
 ============================================================ */
 
 window.showView = App.showView;
 window.selectDate = App.selectDate;
 window.backToCalendar = App.backToCalendar;
-
-
-/* ============================================================
-SAFE GUARD
-============================================================ */
-
-(function () {
-  try {
-    if (!window.DB || !window.state) {
-      console.warn('[Proserva] Core belum lengkap');
-    }
-  } catch (e) {
-    console.error('[Proserva] App error:', e);
-  }
-})();

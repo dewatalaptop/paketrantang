@@ -1,8 +1,8 @@
 'use strict';
 
 /* ============================================================
-UI.HELPERS.JS — PROSERVA CORE
-DOM Utilities + UI Components
+UI.HELPERS.JS — PROSERVA CORE (REWRITE)
+Safe • Clean • UX Improved
 ============================================================ */
 
 /* ============================================================
@@ -14,35 +14,59 @@ function $(id) {
 }
 
 function setText (id, value) {
-  var el = $(id);
-  if (el) el.textContent = value;
+  const el = $(id);
+  if (el) el.textContent = value ?? '';
 }
 
 function setHTML (id, html) {
-  var el = $(id);
-  if (el) el.innerHTML = html;
+  const el = $(id);
+  if (el) el.innerHTML = html ?? '';
+}
+
+/**
+ * Escape HTML (IMPORTANT for user input)
+ */
+function escapeHtml (str) {
+  if (typeof str !== 'string') return str;
+
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
 }
 
 /* ============================================================
-2. MODAL SYSTEM
+2. MODAL SYSTEM (IMPROVED)
 ============================================================ */
 
 function openModal (id) {
-  var el = $(id);
-  if (el) el.classList.add('open');
+  const el = $(id);
+  if (!el) return;
+
+  el.classList.add('open');
+  document.body.style.overflow = 'hidden'; // lock scroll
 }
 
 function closeModal (id) {
-  var el = $(id);
-  if (el) el.classList.remove('open');
+  const el = $(id);
+  if (!el) return;
+
+  el.classList.remove('open');
+
+  // unlock scroll only if no modal open
+  if (!document.querySelector('.modal-overlay.open')) {
+    document.body.style.overflow = '';
+  }
 }
 
 /**
  * Close modal when clicking overlay
  */
 function initModalOverlayClose () {
-  document.querySelectorAll('.modal-overlay').forEach(function (overlay) {
-    overlay.addEventListener('click', function (e) {
+  document.querySelectorAll('.modal-overlay').forEach(overlay => {
+    overlay.addEventListener('click', e => {
       if (e.target === overlay) {
         closeModal(overlay.id);
       }
@@ -51,39 +75,42 @@ function initModalOverlayClose () {
 }
 
 /* ============================================================
-3. TOAST NOTIFICATION
+3. TOAST SYSTEM (IMPROVED)
 ============================================================ */
 
-var TOAST_ICONS = {
+const TOAST_ICONS = {
   success: 'fas fa-check-circle',
   error:   'fas fa-times-circle',
   info:    'fas fa-info-circle',
   warning: 'fas fa-exclamation-triangle'
 };
 
-function showToast (message, type, duration) {
-  type     = type     || 'success';
-  duration = duration || 3000;
+const MAX_TOAST = 4;
 
-  var container = $('toast-container');
+function showToast (message, type = 'success', duration = 3000) {
+
+  const container = $('toast-container');
   if (!container) return;
 
-  var div = document.createElement('div');
-  div.className = 'toast toast-' + type;
+  // limit toast
+  while (container.children.length >= MAX_TOAST) {
+    container.removeChild(container.firstChild);
+  }
+
+  const div = document.createElement('div');
+  div.className = `toast toast-${type}`;
 
   div.innerHTML =
-    '<i class="' + (TOAST_ICONS[type] || TOAST_ICONS.success) + '"></i>' +
-    '<span>' + message + '</span>';
+    `<i class="${TOAST_ICONS[type] || TOAST_ICONS.success}"></i>` +
+    `<span>${escapeHtml(message)}</span>`;
 
   container.appendChild(div);
 
-  setTimeout(function () {
+  setTimeout(() => {
     div.style.opacity = '0';
     div.style.transform = 'translateX(20px)';
 
-    setTimeout(function () {
-      if (div.parentNode) div.remove();
-    }, 300);
+    setTimeout(() => div.remove(), 300);
   }, duration);
 }
 
@@ -92,28 +119,26 @@ function showToast (message, type, duration) {
 ============================================================ */
 
 function showFieldError (id, message) {
-  var el = $(id);
+  const el = $(id);
   if (!el) return;
 
   el.textContent = message;
   el.classList.add('show');
 
-  var inputId = id.replace(/^err-/, 'res-');
-  var input = $(inputId);
+  const inputId = id.replace(/^err-/, 'res-');
+  const input = $(inputId);
 
   if (input) input.classList.add('error');
 }
 
 function clearFormErrors () {
-  document.querySelectorAll('.form-error').forEach(function (el) {
+  document.querySelectorAll('.form-error').forEach(el => {
     el.textContent = '';
     el.classList.remove('show');
   });
 
   document.querySelectorAll('.form-input.error, .form-select.error')
-    .forEach(function (el) {
-      el.classList.remove('error');
-    });
+    .forEach(el => el.classList.remove('error'));
 }
 
 /* ============================================================
@@ -121,23 +146,20 @@ function clearFormErrors () {
 ============================================================ */
 
 function toggleSidebar () {
-  var sidebar = $('sidebar');
-  var overlay = $('sidebar-overlay');
+  const sidebar = $('sidebar');
+  const overlay = $('sidebar-overlay');
 
-  var isOpen = sidebar && sidebar.classList.contains('open');
+  if (!sidebar) return;
 
-  if (isOpen) {
-    sidebar.classList.remove('open');
-    if (overlay) overlay.classList.remove('show');
-  } else {
-    if (sidebar) sidebar.classList.add('open');
-    if (overlay) overlay.classList.add('show');
-  }
+  const isOpen = sidebar.classList.contains('open');
+
+  sidebar.classList.toggle('open', !isOpen);
+  overlay?.classList.toggle('show', !isOpen);
 }
 
 function initSidebarOverlay () {
   if (!$('sidebar-overlay')) {
-    var el = document.createElement('div');
+    const el = document.createElement('div');
     el.id = 'sidebar-overlay';
     el.onclick = toggleSidebar;
     document.body.appendChild(el);
@@ -149,39 +171,40 @@ function initSidebarOverlay () {
 ============================================================ */
 
 function initKeyboardShortcuts () {
-  document.addEventListener('keydown', function (e) {
+  document.addEventListener('keydown', e => {
 
     if (e.key === 'Escape') {
 
-      // Close modals
+      // close modals
       document.querySelectorAll('.modal-overlay.open')
-        .forEach(function (m) {
-          m.classList.remove('open');
-        });
+        .forEach(m => m.classList.remove('open'));
 
-      // Close notif dropdown
-      var nd = $('notif-dropdown');
-      if (nd) nd.classList.remove('open');
+      // unlock scroll
+      document.body.style.overflow = '';
+
+      // close notif
+      $('notif-dropdown')?.classList.remove('open');
     }
   });
 }
 
 /* ============================================================
-7. DROPDOWN (NOTIFICATION)
+7. DROPDOWN (FIXED AUTO CLOSE)
 ============================================================ */
 
 function toggleNotifDropdown (e) {
-  if (e && e.stopPropagation) e.stopPropagation();
+  e?.stopPropagation?.();
 
-  var nd = $('notif-dropdown');
+  const nd = $('notif-dropdown');
   if (!nd) return;
 
   nd.classList.toggle('open');
 }
 
-function closeNotifHandler (e) {
-  var nd  = $('notif-dropdown');
-  var btn = $('notif-btn');
+// global click handler
+document.addEventListener('click', function (e) {
+  const nd  = $('notif-dropdown');
+  const btn = $('notif-btn');
 
   if (!nd) return;
 
@@ -189,15 +212,12 @@ function closeNotifHandler (e) {
   if (btn && btn.contains(e.target)) return;
 
   nd.classList.remove('open');
-}
+});
 
 /* ============================================================
-8. SMALL UI HELPERS
+8. SMALL HELPERS
 ============================================================ */
 
-/**
- * Smooth scroll to top
- */
 function scrollTopSmooth () {
   window.scrollTo({
     top: 0,
@@ -205,22 +225,31 @@ function scrollTopSmooth () {
   });
 }
 
-/**
- * Confirm dialog wrapper
- */
 function confirmAction (msg) {
   return window.confirm(msg);
+}
+
+/**
+ * Debounce helper (future use)
+ */
+function debounce (fn, delay = 300) {
+  let t;
+  return function (...args) {
+    clearTimeout(t);
+    t = setTimeout(() => fn.apply(this, args), delay);
+  };
 }
 
 /* ============================================================
 9. SAFE GUARD
 ============================================================ */
+
 (function () {
   try {
     if (!document.body) {
-      console.warn('[Proserva] DOM belum siap untuk UI helpers');
+      console.warn('[Proserva] DOM belum siap');
     }
   } catch (e) {
-    console.error('[Proserva] UI helpers init error:', e);
+    console.error('[Proserva] UI init error:', e);
   }
 })();

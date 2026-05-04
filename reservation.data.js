@@ -1,8 +1,8 @@
 'use strict';
 
 /* ============================================================
-RESERVATION.DATA.JS — PROSERVA CORE (REWRITE)
-Safe • Scalable • Business-ready
+RESERVATION.DATA.JS — PROSERVA CORE (STABLE REWRITE)
+Safe • Compatible • Calendar-ready
 ============================================================ */
 
 /* ============================================================
@@ -12,10 +12,11 @@ Safe • Scalable • Business-ready
 function ensureState () {
   if (!window.state) window.state = {};
   if (!state.reservations) state.reservations = {};
+  if (!state.locations) state.locations = {};
 }
 
 /* ============================================================
-2. MONTH KEY
+2. HELPERS
 ============================================================ */
 
 function getMonthKey (year, monthIdx) {
@@ -23,7 +24,19 @@ function getMonthKey (year, monthIdx) {
 }
 
 function getMonthKeyFromDate (dateStr) {
-  return dateStr?.substring(0, 7);
+  return dateStr ? dateStr.substring(0, 7) : null;
+}
+
+/**
+ * IMPORTANT FIX:
+ * support locations as object OR array
+ */
+function getLocationsArray () {
+  if (!state.locations) return [];
+
+  if (Array.isArray(state.locations)) return state.locations;
+
+  return Object.values(state.locations);
 }
 
 /* ============================================================
@@ -33,35 +46,47 @@ function getMonthKeyFromDate (dateStr) {
 function getResForMonth (year, monthIdx) {
   ensureState();
 
-  const key = getMonthKey(year, monthIdx);
+  var key = getMonthKey(year, monthIdx);
   return state.reservations[key] || [];
 }
 
 function getResForDate (dateStr) {
   ensureState();
+
   if (!dateStr) return [];
 
-  const mk = getMonthKeyFromDate(dateStr);
-  const arr = state.reservations[mk] || [];
+  var mk = getMonthKeyFromDate(dateStr);
+  var arr = state.reservations[mk] || [];
 
   return arr
-    .filter(r => r.date === dateStr)
-    .sort((a, b) => (a.jam || '').localeCompare(b.jam || ''));
+    .filter(function (r) {
+      return r.date === dateStr;
+    })
+    .sort(function (a, b) {
+      return (a.jam || '').localeCompare(b.jam || '');
+    });
 }
 
 function getAllReservations () {
   ensureState();
 
   return Object.values(state.reservations)
-    .flat()
-    .sort((a, b) => (a.date + a.jam).localeCompare(b.date + b.jam));
+    .reduce(function (acc, arr) {
+      return acc.concat(arr);
+    }, [])
+    .sort(function (a, b) {
+      return (a.date + a.jam).localeCompare(b.date + b.jam);
+    });
 }
 
 function findReservationById (id) {
   if (!id) return null;
 
-  for (const mk in state.reservations) {
-    const found = state.reservations[mk]?.find(r => r.id === id);
+  for (var mk in state.reservations) {
+    var found = state.reservations[mk].find(function (r) {
+      return r.id === id;
+    });
+
     if (found) return found;
   }
 
@@ -69,47 +94,42 @@ function findReservationById (id) {
 }
 
 /* ============================================================
-4. VALIDATION ENGINE
+4. BUSINESS VALIDATION
 ============================================================ */
 
-/**
- * Check kapasitas lokasi
- */
 function isCapacityExceeded (res) {
-  if (!res?.tempat || !res?.jumlah) return false;
+  if (!res || !res.tempat || !res.jumlah) return false;
 
-  const loc = state.locations?.find(l => l.name === res.tempat);
-  if (!loc) return false;
+  var loc = getLocationsArray().find(function (l) {
+    return l.name === res.tempat;
+  });
+
+  if (!loc || !loc.capacity) return false;
 
   return res.jumlah > loc.capacity;
 }
 
-/**
- * Check bentrok waktu (simple rule)
- * → lokasi sama + jam sama + tanggal sama
- */
 function isTimeConflict (res, ignoreId) {
-  const list = getResForDate(res.date);
+  var list = getResForDate(res.date);
 
-  return list.some(r =>
-    r.id !== ignoreId &&
-    r.tempat === res.tempat &&
-    r.jam === res.jam
-  );
+  return list.some(function (r) {
+    return (
+      r.id !== ignoreId &&
+      r.tempat === res.tempat &&
+      r.jam === res.jam
+    );
+  });
 }
 
-/**
- * Validate sebelum save
- */
 function validateReservationBusiness (res, ignoreId) {
 
   if (isCapacityExceeded(res)) {
-    showToast?.('Melebihi kapasitas lokasi', 'error');
+    showToast && showToast('Melebihi kapasitas lokasi', 'error');
     return false;
   }
 
   if (isTimeConflict(res, ignoreId)) {
-    showToast?.('Slot waktu sudah terisi', 'error');
+    showToast && showToast('Slot waktu sudah terisi', 'error');
     return false;
   }
 
@@ -127,7 +147,7 @@ function addReservation (res) {
 
   if (!validateReservationBusiness(res)) return false;
 
-  const mk = getMonthKeyFromDate(res.date);
+  var mk = getMonthKeyFromDate(res.date);
 
   if (!state.reservations[mk]) {
     state.reservations[mk] = [];
@@ -136,27 +156,28 @@ function addReservation (res) {
   state.reservations[mk].push(normalizeReservation(res));
 
   persist();
-
   return true;
 }
 
 /* ============================================================
-6. UPDATE (FIXED: SUPPORT MOVE MONTH)
+6. UPDATE (SUPPORT MOVE MONTH)
 ============================================================ */
 
 function updateReservation (res) {
   ensureState();
 
-  if (!res?.id || !res?.date) return false;
+  if (!res || !res.id || !res.date) return false;
 
   if (!validateReservationBusiness(res, res.id)) return false;
 
-  // cari di semua bulan (karena bisa pindah tanggal)
-  let oldMk = null;
-  let idx = -1;
+  var oldMk = null;
+  var idx   = -1;
 
-  for (const mk in state.reservations) {
-    const i = state.reservations[mk].findIndex(r => r.id === res.id);
+  for (var mk in state.reservations) {
+    var i = state.reservations[mk].findIndex(function (r) {
+      return r.id === res.id;
+    });
+
     if (i !== -1) {
       oldMk = mk;
       idx = i;
@@ -166,15 +187,13 @@ function updateReservation (res) {
 
   if (oldMk === null) return false;
 
-  // hapus dari lama
   state.reservations[oldMk].splice(idx, 1);
 
   if (state.reservations[oldMk].length === 0) {
     delete state.reservations[oldMk];
   }
 
-  // tambah ke bulan baru
-  const newMk = getMonthKeyFromDate(res.date);
+  var newMk = getMonthKeyFromDate(res.date);
 
   if (!state.reservations[newMk]) {
     state.reservations[newMk] = [];
@@ -183,7 +202,6 @@ function updateReservation (res) {
   state.reservations[newMk].push(normalizeReservation(res));
 
   persist();
-
   return true;
 }
 
@@ -193,12 +211,16 @@ function updateReservation (res) {
 
 function deleteReservation (id) {
   ensureState();
+
   if (!id) return false;
 
-  for (const mk in state.reservations) {
+  for (var mk in state.reservations) {
 
-    const arr = state.reservations[mk];
-    const idx = arr.findIndex(r => r.id === id);
+    var arr = state.reservations[mk];
+
+    var idx = arr.findIndex(function (r) {
+      return r.id === id;
+    });
 
     if (idx !== -1) {
 
@@ -239,15 +261,15 @@ function normalizeReservation (r) {
 }
 
 /* ============================================================
-9. PERSISTENCE (SAFE)
+9. PERSISTENCE
 ============================================================ */
 
 function persist () {
   try {
-    saveReservations?.();
+    saveReservations && saveReservations();
   } catch (e) {
-    console.error('Save error', e);
-    showToast?.('Gagal menyimpan data', 'error');
+    console.error('[RESERVATION SAVE ERROR]', e);
+    showToast && showToast('Gagal menyimpan data', 'error');
   }
 }
 

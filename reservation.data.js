@@ -1,25 +1,49 @@
 'use strict';
 
 /* ============================================================
-RESERVATION.DATA.JS — PROSERVA CORE (SMART ENGINE)
-Fast • Aggregated • Calendar-ready • Scalable
+RESERVATION.DATA.JS — PROSERVA CORE (SMART ENGINE FIXED)
+Safe • Stable • UI Compatible • No Undefined Crash
 ============================================================ */
 
 /* ============================================================
-1. INIT SAFETY
+1. INIT SAFETY (🔥 HARD FIX)
 ============================================================ */
 
 function ensureState () {
   if (!window.state) window.state = {};
 
-  state.reservations = state.reservations || {};
-  state.locations    = state.locations || {};
-  state.calendarMeta = state.calendarMeta || {}; // 🔥 NEW
+  // 🔥 reservations MUST object
+  if (!state.reservations || typeof state.reservations !== 'object') {
+    state.reservations = {};
+  }
+
+  // 🔥 locations MUST array
+  if (!Array.isArray(state.locations)) {
+    state.locations = Object.values(state.locations || {});
+  }
+
+  // 🔥 menus MUST array (CRITICAL FIX)
+  if (!Array.isArray(state.menus)) {
+    state.menus = Object.values(state.menus || {});
+  }
+
+  state.calendarMeta = state.calendarMeta || {};
 }
 
 
 /* ============================================================
-2. HELPERS
+2. SAFE ARRAY HELPER (🔥 ANTI MAP ERROR)
+============================================================ */
+
+function safeArray (val) {
+  if (Array.isArray(val)) return val;
+  if (val && typeof val === 'object') return Object.values(val);
+  return [];
+}
+
+
+/* ============================================================
+3. HELPERS
 ============================================================ */
 
 function getMonthKey (year, monthIdx) {
@@ -31,29 +55,30 @@ function getMonthKeyFromDate (dateStr) {
 }
 
 function getLocationsArray () {
-  if (!state.locations) return [];
+  return safeArray(state.locations);
+}
 
-  return Array.isArray(state.locations)
-    ? state.locations
-    : Object.values(state.locations);
+function getMenusArray () {
+  return safeArray(state.menus);
 }
 
 
 /* ============================================================
-3. GETTERS
+4. GETTERS (SAFE)
 ============================================================ */
 
 function getResForMonth (year, monthIdx) {
   ensureState();
-  return state.reservations[getMonthKey(year, monthIdx)] || [];
+  return safeArray(state.reservations[getMonthKey(year, monthIdx)]);
 }
 
 function getResForDate (dateStr) {
   ensureState();
+
   if (!dateStr) return [];
 
   const mk = getMonthKeyFromDate(dateStr);
-  const arr = state.reservations[mk] || [];
+  const arr = safeArray(state.reservations[mk]);
 
   return arr
     .filter(r => r.date === dateStr)
@@ -64,7 +89,7 @@ function getAllReservations () {
   ensureState();
 
   return Object.values(state.reservations)
-    .flat()
+    .flatMap(arr => safeArray(arr))
     .sort((a, b) => (a.date + a.jam).localeCompare(b.date + b.jam));
 }
 
@@ -72,7 +97,9 @@ function findReservationById (id) {
   if (!id) return null;
 
   for (const mk in state.reservations) {
-    const found = state.reservations[mk].find(r => r.id === id);
+    const found = safeArray(state.reservations[mk])
+      .find(r => r.id === id);
+
     if (found) return found;
   }
 
@@ -81,13 +108,9 @@ function findReservationById (id) {
 
 
 /* ============================================================
-4. 🔥 CALENDAR META ENGINE (CORE UPGRADE)
+5. 🔥 CALENDAR META ENGINE
 ============================================================ */
 
-/**
- * Build summary per day
- * → dipakai untuk calendar heatmap
- */
 function rebuildCalendarMeta () {
   ensureState();
 
@@ -122,11 +145,9 @@ function rebuildCalendarMeta () {
   });
 }
 
-/**
- * Get summary cepat (O(1))
- */
 function getDaySummary (dateStr) {
   ensureState();
+
   return state.calendarMeta[dateStr] || {
     total: 0,
     pax: 0,
@@ -137,34 +158,29 @@ function getDaySummary (dateStr) {
 
 
 /* ============================================================
-5. BUSINESS VALIDATION (SMARTER)
+6. BUSINESS VALIDATION
 ============================================================ */
 
 function isCapacityExceeded (res) {
   if (!res?.tempat || !res?.jumlah) return false;
 
-  const loc = getLocationsArray().find(l => l.name === res.tempat);
+  const loc = getLocationsArray()
+    .find(l => l.name === res.tempat);
 
   if (!loc?.capacity) return false;
 
   return res.jumlah > loc.capacity;
 }
 
-/**
- * 🔥 improved conflict:
- * same location + overlapping time
- */
 function isTimeConflict (res, ignoreId) {
 
   const list = getResForDate(res.date);
 
-  return list.some(r => {
-
-    if (r.id === ignoreId) return false;
-    if (r.tempat !== res.tempat) return false;
-
-    return r.jam === res.jam; // (next upgrade: range overlap)
-  });
+  return list.some(r =>
+    r.id !== ignoreId &&
+    r.tempat === res.tempat &&
+    r.jam === res.jam
+  );
 }
 
 function validateReservationBusiness (res, ignoreId) {
@@ -184,7 +200,7 @@ function validateReservationBusiness (res, ignoreId) {
 
 
 /* ============================================================
-6. CREATE
+7. CREATE
 ============================================================ */
 
 function addReservation (res) {
@@ -195,18 +211,18 @@ function addReservation (res) {
 
   const mk = getMonthKeyFromDate(res.date);
 
-  state.reservations[mk] = state.reservations[mk] || [];
+  state.reservations[mk] = safeArray(state.reservations[mk]);
   state.reservations[mk].push(normalizeReservation(res));
 
   persist();
-  rebuildCalendarMeta(); // 🔥 penting
+  rebuildCalendarMeta();
 
   return true;
 }
 
 
 /* ============================================================
-7. UPDATE (SUPPORT MOVE DATE)
+8. UPDATE
 ============================================================ */
 
 function updateReservation (res) {
@@ -219,7 +235,9 @@ function updateReservation (res) {
   let idx = -1;
 
   for (const mk in state.reservations) {
-    const i = state.reservations[mk].findIndex(r => r.id === res.id);
+    const arr = safeArray(state.reservations[mk]);
+    const i = arr.findIndex(r => r.id === res.id);
+
     if (i !== -1) {
       oldMk = mk;
       idx = i;
@@ -237,7 +255,7 @@ function updateReservation (res) {
 
   const newMk = getMonthKeyFromDate(res.date);
 
-  state.reservations[newMk] = state.reservations[newMk] || [];
+  state.reservations[newMk] = safeArray(state.reservations[newMk]);
   state.reservations[newMk].push(normalizeReservation(res));
 
   persist();
@@ -248,7 +266,7 @@ function updateReservation (res) {
 
 
 /* ============================================================
-8. DELETE
+9. DELETE
 ============================================================ */
 
 function deleteReservation (id) {
@@ -258,7 +276,7 @@ function deleteReservation (id) {
 
   for (const mk in state.reservations) {
 
-    const arr = state.reservations[mk];
+    const arr = safeArray(state.reservations[mk]);
     const idx = arr.findIndex(r => r.id === id);
 
     if (idx !== -1) {
@@ -279,7 +297,7 @@ function deleteReservation (id) {
 
 
 /* ============================================================
-9. NORMALIZER
+10. NORMALIZER
 ============================================================ */
 
 function normalizeReservation (r) {
@@ -294,7 +312,7 @@ function normalizeReservation (r) {
     dp: Number(r.dp) || 0,
     tipeDp: r.tipeDp || '',
     tambahan: r.tambahan || '',
-    menus: Array.isArray(r.menus) ? r.menus : [],
+    menus: safeArray(r.menus), // 🔥 FIX
     createdAt: r.createdAt || Date.now(),
     thankYouSent: !!r.thankYouSent
   };
@@ -302,7 +320,7 @@ function normalizeReservation (r) {
 
 
 /* ============================================================
-10. PERSISTENCE
+11. PERSISTENCE
 ============================================================ */
 
 function persist () {
@@ -316,13 +334,13 @@ function persist () {
 
 
 /* ============================================================
-11. INIT
+12. INIT
 ============================================================ */
 
 (function () {
   try {
     ensureState();
-    rebuildCalendarMeta(); // 🔥 auto build saat load
+    rebuildCalendarMeta();
   } catch (e) {
     console.error('[Reservation Init Error]', e);
   }
